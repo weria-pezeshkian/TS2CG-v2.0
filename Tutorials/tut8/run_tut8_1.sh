@@ -49,6 +49,7 @@ TS2CG INU -p point_vesicle -n 3 -t 1 -r 5 -o point_vesicle_new -l outer || {
     echo "Error: TS2CG INU for protein type 1 failed."
     exit 1
 }
+
 TS2CG INU -p point_vesicle_new -n 2 -t 2 -r 5 -o point_vesicle_new2 -l outer || {
     echo "Error: TS2CG INU for protein type 2 failed."
     exit 1
