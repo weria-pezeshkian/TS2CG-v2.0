@@ -1,0 +1,52 @@
+define			 = -DPOSRES_HEAD 
+
+integrator               = md
+dt                       = 0.02  
+nsteps                   = 50000
+nstcomm                  = 100
+comm-grps		 = 
+
+nstxout                  = 0
+nstvout                  = 0
+nstfout                  = 0
+nstlog                   = 1000
+nstenergy                = 1000
+nstxout-compressed       = 10000
+compressed-x-precision   = 100
+compressed-x-grps        =
+
+cutoff-scheme            = Verlet
+nstlist                  = 20
+ns_type                  = grid
+pbc                      = xyz
+verlet-buffer-tolerance  = 0.005
+
+coulombtype              = reaction-field 
+rcoulomb                 = 1.1
+epsilon_r                = 15	; 2.5 (with polarizable water)
+epsilon_rf               = 0
+vdw_type                 = cutoff  
+vdw-modifier             = Potential-shift-verlet
+rvdw                     = 1.1
+
+; Temperature coupling 
+tcoupl                   = v-rescale 
+tc-grps                  = POPC	    W
+tau_t                    = 1.0      1.0  
+ref_t                    = 310      310 
+
+; Pressure coupling
+Pcoupl                   = Berendsen 
+Pcoupltype               = semiisotropic
+tau_p                    = 4.0 
+compressibility          = 3e-4		3e-4
+ref_p                    = 1.0		1.0
+refcoord_scaling	 = all
+
+; Velocity generation
+gen_vel                  = no
+
+constraints              = none 
+constraint_algorithm     = Lincs
+lincs_order              = 4
+lincs_warnangle          = 90
