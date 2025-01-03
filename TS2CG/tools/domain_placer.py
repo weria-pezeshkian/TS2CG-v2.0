@@ -193,8 +193,8 @@ def DOP(args: List[str]) -> None:
                        help='Path to membrane point directory (default: point/)')
     parser.add_argument('-i', '--input', type=Path, default="domain_input.txt",
                        help='Path to lipid specification file (default: domain_input.txt)')
-    parser.add_argument('-l', '--layer', choices=['both', 'inner', 'outer'],
-                       default='both', help='Which membrane layer(s) to modify (default: both)')
+    parser.add_argument('-l', '--leaflet', choices=['both', 'inner', 'outer'],
+                       default='both', help='Which membrane leaflet(s) to modify (default: both)')
     parser.add_argument('-k', '--k-factor', type=float, default=1.0,
                        help='Scaling factor for curvature preference strength (default: 1.0)')
     parser.add_argument('-o', '--output', type=Path,
@@ -216,7 +216,7 @@ def DOP(args: List[str]) -> None:
         membrane = Point(args.point_dir)
         lipids = parse_lipid_file(args.input)
 
-        assign_domains(membrane, lipids, args.layer, args.k_factor)
+        assign_domains(membrane, lipids, args.leaflet, args.k_factor)
 
         write_input_str(lipids, args.new_input, args.old_input)
         logger.info(f"Created input file: {args.new_input}")
