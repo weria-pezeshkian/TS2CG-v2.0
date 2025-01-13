@@ -166,7 +166,7 @@ class Point:
 
         def get_all(self) -> List[dict]:
             """Get all points with protein inclusions."""
-            return [p for p in self.points]
+            return [p['point_id'] for p in self.points]
 
         def get_by_type(self, type_id: int) -> List[dict]:
             """Get all inclusions of a specific type."""
