@@ -139,15 +139,17 @@ class Point:
 
         def __init__(self, data: Optional[np.ndarray] = None):
             self.points = []
-            if data is not None:
-                self._process_data(data)
+            self._process_data(data)
 
         def _process_data(self, data: np.ndarray):
             """Process inclusion data."""
             if data is None or len(data) == 0:
                 return
-            if len(data.shape)==1:
-                data.shape = (4,1)
+            else:
+                if data.shape[0] != 6:
+                    msg = f"Inclusion definition in IncData.dat has wrong size. Expected (6,N), got {data.shape}"
+                    raise ValueError(msg)
+
             for i in range(data.shape[1]):
                 point = {
                     'id': int(data[0, i]),
