@@ -327,7 +327,7 @@ class Point:
             return None
         return Path(path) if isinstance(path, str) else path
 
-    def save(self, output_path: Optional[Union[str, Path]] = None):
+    def save(self, output_path: Optional[Union[str, Path]] = None, backup=True):
         """
         Save membrane structure to files.
 
@@ -338,7 +338,7 @@ class Point:
         output_path = self._ensure_path(output_path) if output_path else self.path
 
         # Create backup only if we're overwriting the original folder
-        if output_path == self.path:
+        if output_path == self.path and backup:
             self._create_backup()
 
         # Create output directory if it doesn't exist
