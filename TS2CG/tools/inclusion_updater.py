@@ -86,11 +86,11 @@ def get_points_near_existing_proteins(membrane: Point, radius: float) -> Dict[st
     excluded_points = {'outer': set(), 'inner': set()}
 
     # Skip if no existing proteins
-    if not membrane.inclusions.points:
+    if not membrane.inclusions:
         return excluded_points
 
     # Check each existing protein
-    for inclusion in membrane.inclusions.points:
+    for inclusion in membrane.inclusions:
         point_id = inclusion['point_id']
         # Determine which leaflet the protein is in (assuming outer if point exists in both)
         if point_id in membrane.outer.ids:
@@ -118,7 +118,7 @@ def place_proteins(membrane: Point, type_id: int, radius: float,
     """Place proteins in membrane with given constraints"""
 
     # Get next available type_id
-    existing_type_ids = [inc['type_id'] for inc in membrane.inclusions.points]
+    existing_type_ids = [inc['type_id'] for inc in membrane.inclusions]
     type_id = type_id or max(existing_type_ids, default=0) + 1
 
     # Get points excluded by existing proteins
