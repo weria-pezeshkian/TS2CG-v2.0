@@ -7,6 +7,10 @@ from pathlib import Path
 
 import numpy as np
 
+from .inclusion import Inclusion
+from .exclusion import Exclusion
+from .membrane import Membrane
+
 logger = logging.getLogger(__name__)
 
 def loadtxt_fix(filename, skiprows):
@@ -19,234 +23,25 @@ class Point:
     """
     A class representing a membrane structure with inclusions and exclusions.
     Can be initialized from a point folder or built from scratch.
-
-    Examples:
-        # Create bilayer
-        >>> membrane = Point.create_empty()
-        >>> membrane.add_membrane_points(coordinates, normals)
-
-        # Create monolayer
-        >>> monolayer = Point.create_empty(monolayer=True)
-        >>> monolayer.add_membrane_points(coordinates, normals)
     """
 
-    class Membrane:
-        """Represents a membrane layer with associated properties."""
-
-        def __init__(self, data: np.ndarray):
-            """Initialize membrane layer from raw data."""
-            self._process_data(data)
-
-        def _process_data(self, data: np.ndarray):
-            """Convert raw data into accessible properties."""
-            # Basic properties
-            self.ids = data[0].astype(int)
-            self.domain_ids = data[1].astype(int)
-            self.area = data[2]
-
-            # Coordinates and vectors
-            self.coordinates = data[3:6].T  # X, Y, Z
-            self.normals = data[6:9].T      # Nx, Ny, Nz
-            self.principal_vectors = {
-                'p1': data[9:12].T,   # P1x, P1y, P1z
-                'p2': data[12:15].T    # P2x, P2y, P2z
-            }
-            self.curvature = {
-                'c1': data[15],        # First principal curvature
-                'c2': data[16]         # Second principal curvature
-            }
-        @classmethod
-        def create_empty(cls):
-            """Create an empty membrane layer."""
-            instance = cls.__new__(cls)
-            instance.ids = np.array([], dtype=int)
-            instance.domain_ids = np.array([], dtype=int)
-            instance.area = np.array([])
-            instance.coordinates = np.array([]).reshape(0, 3)
-            instance.normals = np.array([]).reshape(0, 3)
-            instance.principal_vectors = {
-                'p1': np.array([]).reshape(0, 3),
-                'p2': np.array([]).reshape(0, 3)
-            }
-            instance.curvature = {
-                'c1': np.array([]),
-                'c2': np.array([])
-            }
-            return instance
-
-        def add_points(self, coordinates: np.ndarray, normals: Optional[np.ndarray] = None,
-                      domain_ids: Optional[np.ndarray] = None, areas: Optional[np.ndarray] = None):
-            """
-            Add points to the membrane layer.
-
-            Args:
-               coordinates: Nx3 array of point coordinates
-                normals: Nx3 array of normal vectors (optional)
-                domain_ids: Array of domain IDs (optional)
-                areas: Array of point areas (optional)
-            """
-            n_points = len(coordinates)
-
-            # Set IDs
-            self.ids = np.arange(n_points, dtype=int)
-
-            # Set coordinates
-            self.coordinates = np.asarray(coordinates)
-
-            # Set normals or generate default
-            if normals:
-                self.normals = np.asarray(normals)
-            else:
-                self.normals = np.zeros_like(coordinates)
-                self.normals[:, 2] = 1.0  # Default normal pointing up
-
-            # Set domain IDs or default to 0
-            if domain_ids:
-                self.domain_ids = np.asarray(domain_ids)
-            else:
-                self.domain_ids = np.zeros(n_points, dtype=int)
-
-            # Set areas or default to 1.0
-            if areas:
-                self.area = np.asarray(areas)
-            else:
-                self.area = np.ones(n_points)
-
-            # Initialize principal vectors and curvatures
-            self.principal_vectors['p1'] = np.zeros_like(coordinates)
-            self.principal_vectors['p2'] = np.zeros_like(coordinates)
-            self.curvature['c1'] = np.zeros(n_points)
-            self.curvature['c2'] = np.zeros(n_points)
-
-        @property
-        def mean_curvature(self) -> np.ndarray:
-            """Calculate mean curvature for all points."""
-            return (self.curvature['c1'] + self.curvature['c2']) / 2
-
-
-        def gaussian_curvature(self) -> np.ndarray:
-            """Calculate Gaussian curvature for all points."""
-            return self.curvature['c1'] * self.curvature['c2']
-
-
-        def get_points_by_domain(self, domain_id: int) -> np.ndarray:
-            """Get coordinates of all points in a specific domain."""
-            mask = self.domain_ids == domain_id
-            return self.coordinates[mask]
-
-    class Inclusion:
-        """Manages protein inclusions in the membrane."""
-
-        def __init__(self, data: Optional[np.ndarray] = None):
-            self.points = []
-            if data is not None:
-                self._process_data(data)
-
-        def _process_data(self, data: np.ndarray):
-            """Process inclusion data."""
-            if data is None or len(data) == 0:
-                return
-            if len(data.shape)==1:
-                data.shape = (4,1)
-            for i in range(data.shape[1]):
-                point = {
-                    'id': int(data[0, i]),
-                    'type_id': int(data[1, i]),
-                    'point_id': int(data[2, i]),
-                    'orientation': data[3:6, i]
-                }
-                self.points.append(point)
-
-        @property
-        def count(self) -> int:
-            """Number of protein inclusions."""
-            return len(self.points)
-
-        def get_all(self) -> List[dict]:
-            """Get all points with protein inclusions."""
-            return [p for p in self.points]
-
-        def get_by_type(self, type_id: int) -> List[dict]:
-            """Get all inclusions of a specific type."""
-            return [p for p in self.points if p['type_id'] == type_id]
-
-        def add_protein(self, type_id: int, point_id: int,
-                       orientation: Optional[np.ndarray] = np.array([1, 0, 0])):
-            """
-            Add a protein inclusion.
-
-            Args:
-                type_id: Type identifier for the protein
-                point_id: Point ID where protein should be placed
-                orientation: Vector specifying protein orientation
-            """
-            if orientation is None:
-                orientation = np.array([0, 0, 1])
-
-            orientation=orientation/np.linalg.norm(orientation)
-
-            point = {
-                'id': len(self.points),
-                'type_id': type_id,
-                'point_id': point_id,
-                'orientation': orientation
-            }
-            self.points.append(point)
-
-    class Exclusion:
-        """Manages lipid exclusions in the membrane."""
-
-        def __init__(self, data: Optional[np.ndarray] = None):
-            self.points = []
-            if data is not None:
-                self._process_data(data)
-
-        def _process_data(self, data: np.ndarray):
-            """Process exclusion data."""
-            if data is None or len(data) == 0:
-                return
-            if len(data.shape)==1:
-                data.shape = (3,1)
-            for i in range(data.shape[1]):
-                point = {
-                    'id': int(data[0,i]),
-                    'point_id': int(data[1,i]),
-                    'radius': float(data[2,i])
-                }
-                self.points.append(point)
-
-        @property
-        def count(self) -> int:
-            """Number of exclusion points."""
-            return len(self.points)
-
-        def get_all(self) -> List[int]:
-            """Get all excluded points."""
-            return [p['point_id'] for p in self.points]
-
-        def add_pore(self, point_id: int, radius: float = 1.0):
-            """
-            Add a pore in the lipid membrane.
-
-            Args:
-                point_id: Point ID where lipids should be excluded
-                radius: Radius of exclusion zone
-            """
-            point = {
-                'id': len(self.points),
-                'point_id': point_id,
-                'radius': radius
-            }
-            self.points.append(point)
+    @staticmethod
+    def _ensure_path(path: Optional[Union[str, Path]]) -> Optional[Path]:
+        """Convert string path to Path object if needed."""
+        if path is None:
+            return None
+        else:
+            return Path(path) if isinstance(path, str) else path
 
     def __init__(self, path: Union[str, Path]):
         """
         Initialize point class from a point folder.
 
         Args:
-            path: Path to the point folder
+            path: pathlib
+                Path to the point folder
         """
-        self.path = Path(path)
+        self.path = self._ensure_path(path)
         if not self.path.exists():
             raise FileNotFoundError(f"Point folder not found: {self.path}")
 
@@ -265,14 +60,14 @@ class Point:
             self.monolayer = inner_data is None
 
             # Create membrane instances
-            self.outer = self.Membrane(outer_data)
-            self.inner = None if self.monolayer else self.Membrane(inner_data)
+            self.outer = Membrane(outer_data)
+            self.inner = None if self.monolayer else Membrane(inner_data)
 
             # Load modifications data
             inc_data = self._load_modification_file("IncData.dat")
             exc_data = self._load_modification_file("ExcData.dat")
-            self.inclusions = self.Inclusion(inc_data)
-            self.exclusions = self.Exclusion(exc_data)
+            self.inclusions = Inclusion(inc_data)
+            self.exclusions = Exclusion(exc_data)
 
         except Exception as e:
             logger.error("Failed to load membrane data", exc_info=True)
@@ -286,8 +81,7 @@ class Point:
 
         if not file_path.exists():
             logger.info(f"Membrane file {file_path.name} not found")
-            return None
-
+            return
         try:
             # Read the first few lines to check for Box information
             with open(file_path) as f:
@@ -318,34 +112,33 @@ class Point:
         except (ValueError, FileNotFoundError):
             return None
 
-    @staticmethod
-    def _ensure_path(path: Optional[Union[str, Path]]) -> Optional[Path]:
-        """Convert string path to Path object if needed."""
-        if path is None:
-            return None
-        return Path(path) if isinstance(path, str) else path
-
-    def save(self, output_path: Optional[Union[str, Path]] = None):
+    def update_domains(self, domain_ids: Optional[np.ndarray] = None):
         """
-        Save membrane structure to files.
+        Update domain assignments for membrane layer(s).
+        For bilayers, updates both leaflets. For monolayers, updates only the outer leaflet.
 
         Args:
-            output_path: Path where to save the point folder. If None, saves to original location.
-                        Backup is only created if saving to the original location.
+            domain_ids: New domain assignments as numpy array
         """
-        output_path = self._ensure_path(output_path) if output_path else self.path
+        if domain_ids is None:
+            logger.warning("No domain IDs provided for update")
+            return
 
-        # Create backup only if we're overwriting the original folder
-        if output_path == self.path:
-            self._create_backup()
+        # Update outer membrane (always present)
+        if len(domain_ids) != len(self.outer.ids):
+            raise ValueError(
+                f"Domain IDs length ({len(domain_ids)}) does not match "
+                f"number of membrane points ({len(self.outer.ids)})"
+            )
 
-        # Create output directory if it doesn't exist
-        output_path.mkdir(parents=True, exist_ok=True)
+        self.outer.domain_ids = np.asarray(domain_ids, dtype=int)
 
-        self._save_membranes(output_path)
-        self._save_modifications(output_path)
-
-        logger.info(f"Saved point data to: {output_path}")
+        # Update inner membrane if this is a bilayer
+        if not self.monolayer and self.inner is not None:
+            self.inner.domain_ids = np.asarray(domain_ids, dtype=int)
+            logger.debug("Updated domains for both leaflets")
+        else:
+            logger.debug("Updated domains for outer leaflet only")
 
     def _create_backup(self):
         """
@@ -421,13 +214,13 @@ class Point:
     def _save_modifications(self, output_path: Path):
         """Save inclusion and exclusion data to files."""
         # Save inclusions
-        if self.inclusions.points:
-            data = np.zeros((6, len(self.inclusions.points)))
-            for i, point in enumerate(self.inclusions.points):
+        if self.inclusions:
+            data = np.zeros((6, len(self.inclusions)))
+            for i, point in enumerate(self.inclusions):
                 data[0:3, i] = [point['id'], point['type_id'], point['point_id']]
                 data[3:6, i] = point['orientation']
 
-            header = f"< Inclusion NoInc {len(self.inclusions.points)} >\n"
+            header = f"< Inclusion NoInc {len(self.inclusions)} >\n"
             header += "< id typeid pointid lx ly lz >"
 
             np.savetxt(
@@ -439,12 +232,12 @@ class Point:
             )
 
         # Save exclusions
-        if self.exclusions.points:
-            data = np.zeros((3, len(self.exclusions.points)))
-            for i, point in enumerate(self.exclusions.points):
+        if self.exclusions:
+            data = np.zeros((3, len(self.exclusions)))
+            for i, point in enumerate(self.exclusions):
                 data[0:3, i] = [point['id'], point['point_id'], point['radius']]
 
-            header = f"< Exclusion NoExc {len(self.exclusions.points)} >\n"
+            header = f"< Exclusion NoExc {len(self.exclusions)} >\n"
             header += "< id typeid radius >"
 
             np.savetxt(
@@ -455,113 +248,27 @@ class Point:
                 fmt=['%12d', '%12d', '%12d']
             )
 
-    def update_domains(self, domain_ids: Optional[np.ndarray] = None):
+    def save(self, output_path: Optional[Union[str, Path]] = None, backup: Optional[bool] = True):
         """
-        Update domain assignments for membrane layer(s).
-        For bilayers, updates both leaflets. For monolayers, updates only the outer leaflet.
+        Save membrane structure to files.
 
         Args:
-            domain_ids: New domain assignments as numpy array
+            output_path: pathlib
+                Path where to save the point folder. If None, saves to original location.
+                Backup is only created if saving to the original location.
+            backup: bool
+                wheter or not to write output files
         """
-        if domain_ids is None:
-            logger.warning("No domain IDs provided for update")
-            return
+        output_path = self._ensure_path(output_path) if output_path else self.path
 
-        # Update outer membrane (always present)
-        if len(domain_ids) != len(self.outer.ids):
-            raise ValueError(
-                f"Domain IDs length ({len(domain_ids)}) does not match "
-                f"number of membrane points ({len(self.outer.ids)})"
-            )
+        # Create backup only if we're overwriting the original folder
+        if output_path == self.path and backup:
+            self._create_backup()
 
-        self.outer.domain_ids = np.asarray(domain_ids, dtype=int)
+        # Create output directory if it doesn't exist
+        output_path.mkdir(parents=True, exist_ok=True)
 
-        # Update inner membrane if this is a bilayer
-        if not self.monolayer and self.inner is not None:
-            self.inner.domain_ids = np.asarray(domain_ids, dtype=int)
-            logger.debug("Updated domains for both leaflets")
-        else:
-            logger.debug("Updated domains for outer leaflet only")
+        self._save_membranes(output_path)
+        self._save_modifications(output_path)
 
-    @classmethod
-    def create_empty(cls, box, monolayer=False):
-        """
-        Create an empty Point instance.
-
-        Args:
-            box: Tuple of (x, y, z) box dimensions
-            monolayer: If True, only creates outer membrane layer
-        """
-        instance = cls.__new__(cls)
-        instance.path = None
-        instance.box = box
-        instance.monolayer = monolayer
-
-        # Initialize outer membrane (always present)
-        instance.outer = cls.Membrane.create_empty()
-
-        # Initialize inner membrane only for bilayers
-        instance.inner = None if monolayer else cls.Membrane.create_empty()
-
-        # Initialize modifications
-        instance.inclusions = cls.Inclusion()
-        instance.exclusions = cls.Exclusion()
-
-        return instance
-
-    def add_membrane_points(self, coordinates: np.ndarray, normals: Optional[np.ndarray] = None,
-                          domain_ids: Optional[np.ndarray] = None, areas: Optional[np.ndarray] = None,
-                          bilayer_spacing: float = 4.0):
-        """
-        Add points to membrane layer(s) with proper bilayer spacing.
-
-        Args:
-            coordinates: Nx3 array of point coordinates (midplane coordinates)
-            normals: Nx3 array of normal vectors (optional)
-            domain_ids: Array of domain IDs (optional)
-            areas: Array of point areas (optional)
-            bilayer_spacing: Distance between leaflets in nm (default=4.0, only used for bilayers)
-        """
-        # Generate default normals if not provided (pointing up)
-        if normals is None:
-            normals = np.zeros_like(coordinates)
-            normals[:, 2] = 1.0
-
-        # Normalize the normal vectors
-        normals = normals / np.linalg.norm(normals, axis=1)[:, np.newaxis]
-
-        if self.monolayer:
-            # For monolayer, use coordinates directly for outer membrane
-            self.outer.add_points(coordinates, normals, domain_ids, areas)
-        else:
-            # For bilayer, offset both leaflets from the midplane
-            half_spacing = bilayer_spacing / 2
-
-            # Add outer leaflet
-            outer_coordinates = coordinates + normals * half_spacing
-            self.outer.add_points(outer_coordinates, normals, domain_ids, areas)
-
-            # Add inner leaflet
-            inner_coordinates = coordinates - normals * half_spacing
-            self.inner.add_points(inner_coordinates, -normals, domain_ids, areas)
-
-    def add_lipids(self, coordinates: np.ndarray, normals: np.ndarray,
-                domain_ids: Optional[np.ndarray] = None, areas: Optional[np.ndarray] = None,
-                bilayer_spacing: float = 4.0):
-        """
-        convenience method to add lipids to the membrane.
-        adds points to both leaflets offset by bilayer_spacing along the normal vectors.
-
-        args:
-            coordinates: nx3 array of midplane lipid positions
-            domain_ids: array of domain ids (optional)
-            layer: which layer to add lipids to ("both", "inner", or "outer")
-            bilayer_spacing: distance between inner and outer leaflets in nm (default=4.0)
-        """
-        self.add_membrane_points(
-            coordinates,
-            normals=normals,
-            domain_ids=domain_ids,
-            areas=areas,
-            bilayer_spacing=bilayer_spacing
-        )
+        logger.info(f"Saved point data to: {output_path}")
