@@ -141,7 +141,6 @@ def circular_domains(membrane: Point, radius: float, pointid: list, domain: int,
     else:
         layers = [membrane.outer, membrane.inner]
 
-
     for layer in layers:
         if path_dist:
             dist_matrix = cdist(layer.coordinates, layer.coordinates)
@@ -149,7 +148,7 @@ def circular_domains(membrane: Point, radius: float, pointid: list, domain: int,
             if path_dist:                
                 nodes=_dijkstra_within_radius(dist_matrix,int(point),radius,percent)
             else:
-                dist_matrix=cdist(layer.coordinates,layer.coordinates[point])
+                dist_matrix=cdist(layer.coordinates,[layer.coordinates[int(point)]])
                 nodes=_within_radius(dist_matrix,radius)
             for index in nodes:
                 layer.domain_ids[index]=domain
