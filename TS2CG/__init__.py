@@ -11,4 +11,4 @@ from .cpp.modules import PCG, PLM, SOL
 
 
 __all__ = ["Point", "DOP", "DAI", "INU", "PCG", "PLM", "SOL","VIS"]
-__version__ = "1.2.2"
+__version__ = "2.0"

@@ -41,7 +41,7 @@ class CMakeBuild(build_ext):
 
 setup(
     name='TS2CG',
-    version='1.2.2',
+    version='2.0',
     packages=find_packages(include=['TS2CG']),
     ext_modules=[CMakeExtension('TS2CG')],
     cmdclass={'build_ext': CMakeBuild},
