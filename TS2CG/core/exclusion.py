@@ -24,7 +24,10 @@ class Exclusion:
             if data.shape[0] != 3:
                 msg = f"Exclusion definition in ExcData.dat has wrong size. Expected (3,N), got {data.shape}."
                 raise ValueError(msg)
-
+        try:
+            data.shape[1]
+        except IndexError:
+            data=data.reshape(3,1)
         for i in range(data.shape[1]):
             point = {
                 'id': int(data[0,i]),
