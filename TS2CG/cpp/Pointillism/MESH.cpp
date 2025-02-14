@@ -264,7 +264,7 @@ void MESH::GenerateMesh(MeshBluePrint meshblueprint)
     }
     if(no_repeated_link!=0)
     {
-        std::cout<<" error---> approximatly  "<<no_repeated_link/3<<" trinagles was found to be inconsisent in their orientation \n";
+        std::cout<<" error---> approximatly  "<<no_repeated_link/3<<" triangles was found to be inconsisent in their orientation \n";
         exit(0);
     }
 }
