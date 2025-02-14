@@ -107,7 +107,7 @@ def write_input_str(lipids: Sequence[LipidSpec], output_file: Path, old_input: O
 
 def _get_centers(membrane,Type,dummys):
     from_type=[inc["point_id"] for inc in membrane.inclusions.get_by_type(Type)]
-    from_dummy=dummys.strip().split(",")
+    from_dummy=dummys.strip().replace(" ","").split(",")
 
     to_set=list(set(from_type+from_dummy))
 
@@ -121,9 +121,9 @@ def _dijkstra_within_radius(distance_matrix, start_index, radius,percent=100):
     reachable_nodes = [node for node, dist in shortest_paths.items() if dist < radius]
     return reachable_nodes
 
-def _within_radius(distance_matrix,start_index,radius):
+def _within_radius(distance_matrix,radius):
     reachable_nodes=[]
-    for i,value in enumerate(distance_matrix[start_index]):
+    for i,value in enumerate(distance_matrix):
         if value <= radius:
             reachable_nodes.append(i)
 
@@ -143,12 +143,14 @@ def circular_domains(membrane: Point, radius: float, pointid: list, domain: int,
 
 
     for layer in layers:
-        dist_matrix = cdist(layer.coordinates, layer.coordinates)
+        if path_dist:
+            dist_matrix = cdist(layer.coordinates, layer.coordinates)
         for point in pointid:
-            if path_dist:
+            if path_dist:                
                 nodes=_dijkstra_within_radius(dist_matrix,int(point),radius,percent)
             else:
-                nodes=_within_radius(dist_matrix,int(point),radius)
+                dist_matrix=cdist(layer.coordinates,layer.coordinates[point])
+                nodes=_within_radius(dist_matrix,radius)
             for index in nodes:
                 layer.domain_ids[index]=domain
 
