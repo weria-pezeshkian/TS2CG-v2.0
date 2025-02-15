@@ -129,7 +129,7 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
                 std::vector<std::string> S = f.split(str);
                 if(S.size()<4)
                 {
-                    std::cout<<"error ---> information of the trinagles  "<<i<<" is not sufficent in the tsi file \n";
+                    std::cout<<"error ---> information of the triangles  "<<i<<" is not sufficent in the tsi file \n";
                     exit(0);
                 }
                 else

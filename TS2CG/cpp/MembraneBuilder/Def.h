@@ -17,7 +17,7 @@
 #define Precision               8
 #define Enabled                 1
 #define Disabled                2
-#define SoftWareVersion         "1.2"
+#define SoftWareVersion         "2.0"
 #define ExecutableName          "PCG"
 #define SoftWareName            "CG Membrane builder"
 #define LIBExt                  "LIB"

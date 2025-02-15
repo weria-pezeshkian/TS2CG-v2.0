@@ -1,7 +1,7 @@
 #if !defined(AFX_Volume_H_224B21B8_C13C_2248_BF23_124095086233__INCLUDED_)
 #define AFX_Volume_H_224B21B8_C13C_2248_BF23_124095086233__INCLUDED_
-//================ version 1.2
-/* this class is created in version 1.2 to couple the system to a force
+//================ version 2.0
+/* this class is created in version 2.0 to couple the system to a force
 for taraget volume.
 */
 #include "SimDef.h"

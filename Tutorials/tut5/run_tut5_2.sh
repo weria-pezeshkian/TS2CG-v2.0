@@ -39,9 +39,9 @@ files="files"
 
 TS2CG PLM -TSfile Sphere_2.tsi -bilayerThickness 3.8 -rescalefactor 4 4 4 
 
-TS2CG DAI -p point -r 4 -d 1 -T  1 
+TS2CG DAI -p point -r 4 -d 1 -t  1 
 
-TS2CG DAI -p point -r 4 -d 2 -T  2 
+TS2CG DAI -p point -r 4 -d 2 -t  2 
 
 TS2CG PCG -str input.str -Bondlength 0.2 -LLIB $files/Martini3.LIB -defout system_2
 

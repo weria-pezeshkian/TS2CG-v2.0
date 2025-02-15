@@ -8,7 +8,7 @@
  Weria Pezeshkian (weria.pezeshkian@gmail.com)
  Copyright (c) Weria Pezeshkian
  Vertex object: can be defined by and integer and three double numbers for the positions of the vertices
- Also there are a few lists pointing to the nighbouring links and trinagles and also the inclusion if the vertex own one.
+ Also there are a few lists pointing to the nighbouring links and triangles and also the inclusion if the vertex own one.
  *******************/
 class links;
 class triangle;

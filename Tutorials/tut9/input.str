@@ -1,0 +1,16 @@
+include  P1.gro
+include  P2.gro
+
+[Lipids List]
+Domain  0  
+; lipidnname ratio_up ratio_down  APL
+POPC 1  1  0.64
+End
+Domain 1
+POPE 1 1 0.64
+End
+
+[Protein List]
+protein1   1	0.01	0	0	-2.5
+protein2   2	0.01	0	0	-2.5
+End Protein

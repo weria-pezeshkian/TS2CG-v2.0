@@ -35,41 +35,25 @@ class CPPModule:
 
     def run(self, args: List[str], cwd: Optional[Union[str, Path]] = None) -> subprocess.CompletedProcess:
         """Run the C++ binary with given arguments"""
-        try:
-            # For help commands, we want to show the output and exit
-            if '-h' in args or '--help' in args:
-                result = subprocess.run(
-                    [str(self._binary_path)] + args,
-                    cwd=cwd,
-                    text=True
-                )
-                sys.exit(0)
+        # For normal commands, handle errors
+        result = subprocess.run(
+            [str(self._binary_path)] + args,
+            cwd=cwd,
+            capture_output=True,
+            text=True
+        )
 
-            # For normal commands, handle errors
-            result = subprocess.run(
-                [str(self._binary_path)] + args,
-                cwd=cwd,
-                capture_output=True,
-                text=True
-            )
+        # Print stdout if there is any
+        if result.stdout:
+            print(result.stdout)
 
-            # Print stdout if there is any
-            if result.stdout:
-                print(result.stdout)
+        # Check for errors
+        if result.returncode != 0:
+            if result.stderr:
+                logger.error(result.stderr)
+            else:
+                # Check for segfaults
+                msg = f"Failed to run {self.binary_name}:\n\t Program exited with a segmentation fault (core dumped)"
+                logger.error(msg)
 
-            # Check for errors
-            if result.returncode != 0:
-                if result.stderr:
-                    logger.error(result.stderr)
-                raise subprocess.CalledProcessError(
-                    result.returncode,
-                    result.args,
-                    result.stdout,
-                    result.stderr
-                )
-
-            return result
-
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Error running {self.binary_name}: {e.stderr}")
-            raise RuntimeError(f"Failed to run {self.binary_name}") from e
+        return result

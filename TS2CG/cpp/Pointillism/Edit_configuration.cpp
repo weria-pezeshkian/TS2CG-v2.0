@@ -41,7 +41,7 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments)
   }
   else if(m_TaskName=="vertexinfo")
   {
-          // a new feature in TS2CG1.2 and above. Finding geometric info on a vertex
+          // a new feature in TS2CG2.0 and above. Finding geometric info on a vertex
           VertexInfo(m_MeshFileName);
   }
   else if (m_TaskName=="PLM")
