@@ -1,38 +1,33 @@
-#if !defined(AFX_NFUNCTION_H_7F4A21B8_B13C_11D3_BF19_004095086186__INCLUDED_)
+#ifndef AFX_NFUNCTION_H_7F4A21B8_B13C_11D3_BF19_004095086186__INCLUDED_
 #define AFX_NFUNCTION_H_7F4A21B8_B13C_11D3_BF19_004095086186__INCLUDED_
- 
-class Nfunction
-{
+
+#include <string>
+#include <vector>
+
+class Nfunction {
 public:
-Nfunction();
- ~Nfunction();
-public:
-    int AFactor(int R);
-//Nfunction(int a);
-std::string Int_to_String(double ); //   A function for making a string from a intger
-int String_to_Int(std::string);
-double String_to_Double(std::string);
-double Word_Searcher(std::string, std::string); // A function get a word and a filename and looking for word into the file
+    // Conversion functions
+    static std::string Int_to_String(double value);
+    static std::string D2S(double value);
+    static int String_to_Int(const std::string& str);
+    static double String_to_Double(const std::string& str);
+    // String manipulation functions
+    static std::string SubstringFromRight(const std::string& input, const char& chr);
+    // File operations
+    static bool FileExist(const std::string& name);
+    // Utility functions
+    static bool isEven(int x);
+    static bool CopyFile(std::string file1, std::string file2);
+    
+    static std::vector<std::string> split(const std::string& str);
+    static std::vector<std::string> Split(const std::string& str); // new version of it
 
-std::string Word_Searcher_String(std::string, std::string); // A function get a word and a filename and looking for word into the file
-void Change_Line();
-    void Write_One_LogMessage(std::string);
-    void Write_One_ErrorMessage(std::string);
-    void CleanFiles();
-    std::vector<std::string> split(std::string str);
-    bool FileExist (const std::string& name);
+    static bool OpenFolder(const std::string &foldername);
 
-bool isEven(int x);
-private :
-int L;
-double NUMBER;
-std::string WORD;
-
-
+    static bool CopyBinaryFile(const std::string& file1, const std::string& file2, const std::streamsize bufferSize);
+    static void HelpMessage();
+    static std::string ConvertSecond2Time(double seconds);
 };
 
-
-
-
-
 #endif
+

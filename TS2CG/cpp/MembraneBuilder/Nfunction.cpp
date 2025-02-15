@@ -181,6 +181,18 @@ bool Nfunction::CopyBinaryFile(const std::string& inputFilename, const std::stri
 
     return true;
 }
+std::string Nfunction::trim(const std::string& str )
+{
+    const std::string& whitespace = " \t";
+    char  strBegin = str.find_first_not_of(whitespace);
+    if (strBegin == std::string::npos)
+        return ""; // no content
+    
+    char strEnd = str.find_last_not_of(whitespace);
+    char strRange = strEnd - strBegin + 1;
+    
+    return str.substr(strBegin, strRange);
+}
 std::string Nfunction::ConvertSecond2Time(double Seconds) {
     int seconds = Seconds;
     if(seconds != 0)
@@ -235,16 +247,4 @@ std::string Nfunction::ConvertSecond2Time(double Seconds) {
 
     // Return the built string
     return ss.str();
-}
-std::string Nfunction::trim(const std::string& str )
-{
-    const std::string& whitespace = " \t";
-    char  strBegin = str.find_first_not_of(whitespace);
-    if (strBegin == std::string::npos)
-        return ""; // no content
-    
-    char strEnd = str.find_last_not_of(whitespace);
-    char strRange = strEnd - strBegin + 1;
-    
-    return str.substr(strBegin, strRange);
 }

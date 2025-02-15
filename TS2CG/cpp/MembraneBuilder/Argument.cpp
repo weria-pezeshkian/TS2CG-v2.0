@@ -25,29 +25,11 @@ Argument::Argument(std::vector <std::string> argument)
     m_SoftWareVersion = SoftWareVersion;
     m_ArgCon = 1;
     std::string Arg1;
-
-    
-                
     Nfunction f;
-
-    std::ofstream log("pcg.log");  // Open the file directly in the constructor
-    if (log.is_open())  // Ensure the file opened successfully
-    {
-        for (long i = 0; i < m_Argument.size(); i++)
-        {
-            log << m_Argument[i] << "  ";  // Use array-style indexing
-        }
-        log.close();  // Close the file after writing
-    }
-    else
-    {
-        std::cerr << "Error: Could not open log file for writing.\n";
-    }
-
 
         for (long i=1;i<m_Argument.size();i=i+2)
         {
-            Arg1 = m_Argument.at(i);
+            Arg1 = m_Argument[i];
             if(Arg1=="-dts") //  "-dts"
             {
                 if(m_Argument.size()>i+1){
@@ -60,8 +42,9 @@ Argument::Argument(std::vector <std::string> argument)
             }
             else if (Arg1==FunctionType) // (Arg1=="-function")
             {
-                if(m_Argument.size()>i+1)
-                m_Function = m_Argument.at(i+1);
+                if(m_Argument.size()>i+1){
+                    m_Function = m_Argument.at(i+1);
+                }
                 if(m_Function=="1dsin")
                 {
                     m_1DSinState.Lx = Nfunction::String_to_Double(m_Argument.at(i+2));
@@ -216,6 +199,20 @@ Argument::Argument(std::vector <std::string> argument)
                 std::cout<<" Note (warning): lipid library file, is not provided, some lipids may not exist  \n";
             }
         }
+    
+    std::ofstream log("pcg.log");  // Open the file directly in the constructor
+    if (log.is_open())  // Ensure the file opened successfully
+    {
+        for (long i = 0; i < m_Argument.size(); i++)
+        {
+            log << m_Argument[i] << "  ";  // Use array-style indexing
+        }
+        log.close();  // Close the file after writing
+    }
+    else
+    {
+        std::cerr << "Error: Could not open log file for writing.\n";
+    }
  
 }
 Argument::~Argument() {

@@ -1,257 +1,85 @@
 #include <iostream>
-//#include <vector>
-#include "Vec3D.h" 
 #include <math.h>
 #include <limits.h>
-Vec3D::Vec3D(double x,double y,double z)                // M row and N column
-{
-
-
-    m_X=x;
-    m_Y=y;
-    m_Z=z;
-
-
-  
+#include "Vec3D.h" 
+/*
+ Perhaps we could use array so we do not have if condition for accessing membranes 
+ */
+std::ostream& operator<<(std::ostream& os, const Vec3D& vec) {
+    os << vec.m_X << " " << vec.m_Y << " " << vec.m_Z;
+    return os;
 }
-Vec3D::Vec3D()                // M row and N column
-{
-    
+Vec3D::Vec3D(double x, double y, double z) : m_X(x), m_Y(y), m_Z(z) {}
 
-    m_X=0.0;
-    m_Y=0.0;
-    m_Z=0.0;
+double& Vec3D::operator()(const int n) {
+   // if (n < 0 || n >= 3) throw std::out_of_range("Index out of range");
     
-    
-    
+    if (n == 0) return m_X;
+    else if (n == 1) return m_Y;
+    else return m_Z;
 }
 
-
-
-Vec3D::~Vec3D()
-{
-   
+Vec3D Vec3D::operator+(const Vec3D& other) const {
+    return Vec3D(m_X + other.m_X, m_Y + other.m_Y, m_Z + other.m_Z);
 }
 
 
+Vec3D Vec3D::operator-(const Vec3D& other) const {
+    return Vec3D(m_X - other.m_X, m_Y - other.m_Y, m_Z - other.m_Z);
+}
 
-
-
-
-
-/////////////// Function
-
-///////// F1
-
-
-
-///////////////////////////  F3   x and y are the power of the x and y and last term is changing from 0 to  m_Vec3DTermno-1
-
-
-
-double Vec3D::at(int n)
-{
-
-double Value=0;
-
-
-    if(n==0)
-    {
-        Value=m_X;
-    }
-    else if(n==1)
-    {
-        Value=m_Y;
-    }
-    else if(n==2)
-    {
-        Value=m_Z;
-    }
-    else
-    {
-        std::cout<<"Error: index should not be larger the 2 \n";
+Vec3D Vec3D::operator*(const Vec3D& other) const {
+    return Vec3D(m_Y * other.m_Z - m_Z * other.m_Y,
+                 m_Z * other.m_X - m_X * other.m_Z,
+                 m_X * other.m_Y - m_Y * other.m_X);
+}
+void Vec3D::normalize(){
+    double norm = std::sqrt(m_X*m_X + m_Y*m_Y + m_Z*m_Z);
+    
+    if(norm == 0){
+        return;
     }
     
-    
-
-
-return Value; 
-}
-void Vec3D::put( int n, double s)
-{
-
-    if(n==0)
-    {
-        m_X=s;
-    }
-    else if(n==1)
-    {
-        m_Y=s;
-    }
-    else if(n==2)
-    {
-        m_Z=s;
-    }
-    else
-    {
-        std::cout<<"Error: index should not be larger the 2 \n";
-    }
-
-
-}
-
-
-
-double& Vec3D::operator()(const int n)
-{
-
-    double *Value=0;
-    if(n==0)
-    {
-        Value=&m_X;
-    }
-    else if(n==1)
-    {
-        Value=&m_Y;
-    }
-    else if(n==2)
-    {
-        Value=&m_Z;
-    }
-    else
-    {
-        std::cout<<"Error: index should not be larger the 2 \n";
-       
-    }
-
-    return *Value;
-          
-
-}
-//-------------------------------------------------------
-Vec3D Vec3D::operator+(Vec3D M)
-{
-    Vec3D M1;
-   // std::vector <std::vector <double> > m_Mat;
-
-
-
-
-            M1(0)=this->at(0)+M(0);
-    M1(1)=this->at(1)+M(1);
-    M1(2)=this->at(2)+M(2);
-
-
-    return M1;
+    m_X = m_X/norm;
+    m_Y = m_Y/norm;
+    m_Z = m_Z/norm;
 
     
 }
-//-------------------------------------------------------
-Vec3D Vec3D::operator-(Vec3D M)
-{
-    Vec3D M1;
-    // std::vector <std::vector <double> > m_Mat;
-    
-    
-    
-    
-    M1(0)=this->at(0)-M(0);
-    M1(1)=this->at(1)-M(1);
-    M1(2)=this->at(2)-M(2);
-    
-    
-    return M1;
-    
+Vec3D Vec3D::operator*(double scalar) const {
+    return Vec3D(m_X * scalar, m_Y * scalar, m_Z * scalar);
 }
-//-------------------------------------------------------
-Vec3D Vec3D::operator*(Vec3D M)
-{
 
+void Vec3D::operator=(const Vec3D& other) {
+    m_X = other.m_X;
+    m_Y = other.m_Y;
+    m_Z = other.m_Z;
+}
 
+double Vec3D::norm() const {
+    return std::sqrt(m_X * m_X + m_Y * m_Y + m_Z * m_Z);
+}
+double Vec3D::dot(const Vec3D& v1, const Vec3D& v2) {
+    return v1.m_X * v2.m_X + v1.m_Y * v2.m_Y + v1.m_Z * v2.m_Z;
+}
 
-    Vec3D M1;
+bool Vec3D::isbad() const {
+    
+    return !std::isfinite(m_X) || !std::isfinite(m_Y) || !std::isfinite(m_Z);
+}
+bool Vec3D::isgood() const {
+    return std::isfinite(m_X) && std::isfinite(m_Y) && std::isfinite(m_Z);
+}
+void Vec3D::print(){
+    std::cout<<m_X<<"  "<<m_Y<<"  "<<m_Z<<"\n";
+}
+
+/*
  
-
-    
-
-     M1(0)=(this->at(1))*M(2)-(this->at(2))*M(1);
-     M1(1)=(this->at(2))*M(0)-(this->at(0))*M(2);
-     M1(2)=(this->at(0))*M(1)-(this->at(1))*M(0);
-
-    
-//std::cout<<(this->at(2))*M(0)<<"  "<<(this->at(0))*M(2)<<"  "<<M1(0)<<"  "<<M1(1)<<"  "<<M1(2)<<"\n";
-    
-    return M1;
-
-    
-}
-Vec3D Vec3D::operator*(double x)
-{
-    
-    
-    
-    Vec3D M1;
-    
-    
-    
-    
-    M1(0)=(this->at(0))*x;
-    M1(1)=(this->at(1))*x;
-    M1(2)=(this->at(2))*x;
-    
-    
-    //std::cout<<(this->at(2))*M(0)<<"  "<<(this->at(0))*M(2)<<"  "<<M1(0)<<"  "<<M1(1)<<"  "<<M1(2)<<"\n";
-    
-    return M1;
-    
-    
-}
-
-//-------------------------------------------------------
-void Vec3D::operator=(Vec3D M)
-{
-
-
-
-
-  
-
-            m_X= M(0);
-            m_Y= M(1);
-            m_Z= M(2);
-
-        
-
-
-    
-}
-//==========================================================
-//=================== Inverse Vec3D =========================
-//=============================================
-
-double Vec3D::norm ()
-{
-    
-    
-    double No=m_X*m_X+m_Y*m_Y+m_Z*m_Z;
-    return sqrt(No);
-    
-    
-}
-double Vec3D::dot(Vec3D v1,Vec3D v2)
-{
-    
-    
-    double No=v1(0)*v2(0)+v1(1)*v2(1)+v1(2)*v2(2);
-    
-    
-    
-    return No;
-    
-    
-}
-
-
-
-
-//===========================================================================================
+ bool Vec3D::isbad() const {
+     return std::isinf(m_X) || std::isnan(m_X) ||
+            std::isinf(m_Y) || std::isnan(m_Y) ||
+            std::isinf(m_Z) || std::isnan(m_Z);
+ }
+ 
+ */

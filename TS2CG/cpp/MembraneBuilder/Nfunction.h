@@ -21,12 +21,13 @@ public:
     
     static std::vector<std::string> split(const std::string& str);
     static std::vector<std::string> Split(const std::string& str); // new version of it
-    static std::string trim(const std::string& str );
 
     static bool OpenFolder(const std::string &foldername);
 
     static bool CopyBinaryFile(const std::string& file1, const std::string& file2, const std::streamsize bufferSize);
     static std::string ConvertSecond2Time(double seconds);
+    static std::string trim(const std::string& str );
+
 };
 
 #endif

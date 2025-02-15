@@ -58,7 +58,7 @@ Vec3D *m_pBox;
     // Initialize Variables default values
     void InitializeVariables();
     // updates variables based on the command line arguments
-    void UpdateVariables(std::vector <std::string> &);
+    void UpdateVariables(const std::vector<std::string>& Arguments);
     void UpdateBoxSize(MESH* pmesh);
 
 private:

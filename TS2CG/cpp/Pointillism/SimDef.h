@@ -20,7 +20,7 @@
 #define Def_rescalefactor       "-rescalefactor"
 #define Def_AreaPerLipid        "-ap"
 #define Def_DegreeOfMeshing        "-Mashno"
-#define Def_TaskName        "-r"
+#define Def_TaskName                "-r"
 #define Def_OutputFolderName        "-o"
 #define Def_SmoothingFlag        "-smooth"
 #define Def_resizebox           "-resizebox"

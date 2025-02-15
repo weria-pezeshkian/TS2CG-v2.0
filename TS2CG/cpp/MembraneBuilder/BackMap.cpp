@@ -542,8 +542,9 @@ void BackMap::ExcludePointsUsingExclusion(std::vector<exclusion*> &pExc, std::ve
         for ( std::vector<exclusion*>::iterator it = pExc.begin(); it != pExc.end(); it++ )
         {
             int pointid=(*it)->GetPointID();
-            if(pointid<0 || pointid>m_pPointUp.size())
-            std::cout<<"error 23456 \n";
+            if(pointid<0 || pointid>m_pPointUp.size()){
+                std::cout<<"---> error: id = 23456: please report to the developer with the error id name \n";
+            }
             
             point *Up_p1=m_pPointUp.at(pointid);
             Vec3D Pos = Up_p1->GetPos();
@@ -740,8 +741,8 @@ for (std::vector<DomainLipid*>::iterator it = pdomainlipids.begin(); it != pdoma
                 std::string ltype = (*it)->Name;
                 if (m_map_MolName2MoleculesType.count(ltype) == 0)
                 {
-                    std::cout << "Error:-----> molecule name " <<ltype<<" does not exist in the lib files \n";
-                    return false;
+                    std::cout << " \n---> error: molecule name " <<ltype<<" does not exist in the lib files \n";
+                    exit(0);
                 }
                 GenLipid(m_map_MolName2MoleculesType.at(ltype), 0, Pos, N, Dir, T1, T2);
                 Ran_point->UpdateArea(0);
