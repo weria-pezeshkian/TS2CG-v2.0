@@ -117,6 +117,17 @@ void WriteFiles::Writevtu(std::vector< vertex* > ver, std::vector< triangle* > t
         }
         Output<<"        </DataArray>"<<"\n";
 
+    Output<<"        <DataArray type=\"Float32\" Name=\"vtype\" Format=\"ascii\">"<<"\n";
+    
+    for (int i=0;i<numv;i++)
+    {
+        vertex* a=ver.at(i);
+
+                Output<<"          "<<a->m_VertexType<<"\n";
+
+        
+    }
+    Output<<"        </DataArray>"<<"\n";
     
     WriteInclusion("dir", ver, &Output);
     

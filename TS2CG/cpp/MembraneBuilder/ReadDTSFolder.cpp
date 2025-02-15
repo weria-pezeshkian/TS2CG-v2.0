@@ -51,13 +51,9 @@ void ReadDTSFolder::Read(std::string foldername)
 
 
 }
-ReadDTSFolder::~ReadDTSFolder()
-{
+ReadDTSFolder::~ReadDTSFolder() {
 
 }
-
-
-
 std::vector<point> ReadDTSFolder::ReadPointObjects(std::string file, int lay)
 {
 
@@ -107,9 +103,10 @@ std::vector<point> ReadDTSFolder::ReadPointObjects(std::string file, int lay)
 
     float area,x,y,z,nx,ny,nz,p1x,p1y,p1z,p2x,p2y,p2z,c1,c2;
     int id,domainid;
+    int point_type = 0;
     for (int i=0;i<NoPoints;i++)
     {
-        check = fscanf(fdtspoins,"%d%d%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f",&id,&domainid,&area,&x,&y,&z,&nx,&ny,&nz,&p1x,&p1y,&p1z,&p2x,&p2y,&p2z,&c1,&c2);
+        check = fscanf(fdtspoins,"%d%d%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%d",&id,&domainid,&area,&x,&y,&z,&nx,&ny,&nz,&p1x,&p1y,&p1z,&p2x,&p2y,&p2z,&c1,&c2, &point_type);
 
 
         if(area==0) {
@@ -124,6 +121,7 @@ std::vector<point> ReadDTSFolder::ReadPointObjects(std::string file, int lay)
         C.push_back(c1);
         C.push_back(c2);
         point p(id, area,X,N, P1, P2, C );
+        p.UpdatePointType(point_type);
         if(lay==-1)
         p.UpdateUpperLayer(false);
         p.UpdateDomainID(domainid);

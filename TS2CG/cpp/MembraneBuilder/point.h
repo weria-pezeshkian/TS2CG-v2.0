@@ -41,8 +41,10 @@ public:
   void UpdatepointUnitCell(UnitCell * z);
   void UpdateArea(double);
   void UpdateUpperLayer(bool);
+  void UpdatePointType(int );
 
 public:
+
 
 
 private:
@@ -60,6 +62,7 @@ private:
     int m_ID;
     inclusion *m_pInc;
     bool m_HasInc;
+    int m_PointType;  // type is 0 if surface, 1 if edge
 };
 
 

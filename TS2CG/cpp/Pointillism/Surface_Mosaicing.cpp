@@ -49,6 +49,12 @@ void  Surface_Mosaicing::GenerateMidVForAllLinks(std::vector<links *> vlink)
             //==== for version 1.1 and above
                 int dom1 = ((*it)->GetV1())->GetDomainID();
                 int dom2 = ((*it)->GetV2())->GetDomainID();
+                if((*it)->GetV1()->m_VertexType == 1 && (*it)->GetV2()->m_VertexType == 1) {
+                    v.m_VertexType = 1;
+                }
+                else{
+                    v.m_VertexType = 0;
+                }
                 double domain = 0;
                 if (dom1==dom2)
                 {

@@ -525,7 +525,7 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
     fprintf(BMFile1,  "%s%10d%s\n",STR1,NoPoints,STR2);
     if(layer==-1)
     fprintf(BMFile2,  "%s%10d%s\n",STR1,NoPoints,STR2);
-    const char* Cont="< id domain_id area X Y Z Nx Ny Nz P1x P1y P1z P2x P2y P2z C1 C2  >";
+    const char* Cont="< id domain_id area X Y Z Nx Ny Nz P1x P1y P1z P2x P2y P2z C1 C2 vtype >";
     if(layer==1)
     fprintf(BMFile1,  "%s\n",Cont);
     if(layer==-1)
@@ -560,7 +560,7 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
         double y=(*it)->GetVYPos();
         double z=(*it)->GetVZPos();
         int domain = (*it)->GetDomainID();
-
+        int vtype = (*it)->m_VertexType;
         double c1,c2;
         if((*it)->m_VertexType==0)
         {
@@ -577,11 +577,11 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
         if(layer==1)
         {
 
-            fprintf(BMFile1,"%10d%5d%10.3f%10.3f%10.3f%10.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f\n",i,domain,area,x,y,z,normal(0),normal(1),normal(2),GD1(0),GD1(1),GD1(2),GD2(0),GD2(1),GD2(2),c1,c2);
+            fprintf(BMFile1,"%10d%5d%10.3f%10.3f%10.3f%10.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%10d\n",i,domain,area,x,y,z,normal(0),normal(1),normal(2),GD1(0),GD1(1),GD1(2),GD2(0),GD2(1),GD2(2),c1,c2,vtype);
         }
         if(layer==-1)
         {
-            fprintf(BMFile2,"%10d%5d%10.3f%10.3f%10.3f%10.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f\n",i,domain,area,x,y,z,normal(0),normal(1),normal(2),GD1(0),GD1(1),GD1(2),GD2(0),GD2(1),GD2(2),c1,c2);
+            fprintf(BMFile2,"%10d%5d%10.3f%10.3f%10.3f%10.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%10d\n",i,domain,area,x,y,z,normal(0),normal(1),normal(2),GD1(0),GD1(1),GD1(2),GD2(0),GD2(1),GD2(2),c1,c2,vtype);
         }
         
         i++;

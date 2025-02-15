@@ -15,6 +15,7 @@ point::point(int id,double area, Vec3D x,Vec3D n, Vec3D p1, Vec3D p2, std::vecto
     m_ID = id;
     m_UpperLayer = true;
     m_DomainID = 0;
+    m_PointType = 0;
 }
 
 
@@ -23,7 +24,9 @@ point::~point()
     
 }
 
-
+void point::UpdatePointType(int ptype){
+    m_PointType = ptype;
+}
 void point::UpdateBox(Vec3D *x)
 {
 m_pBox=x;
