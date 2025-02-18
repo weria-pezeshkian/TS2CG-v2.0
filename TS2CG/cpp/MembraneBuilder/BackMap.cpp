@@ -146,10 +146,10 @@ if(pArgu->Skip_LipidPlacement() == false){
 
 
 
-    bool Renormalizedlipidratio = pArgu->GetRenorm();
-    m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
-    GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids
-    pAllDomain = GENDOMAIN.GetDomains();
+    //bool Renormalizedlipidratio = pArgu->GetRenorm();
+    //m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
+    //GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids
+    //pAllDomain = GENDOMAIN.GetDomains();
     //
     std::cout<<"---> now,  the domain info will be used to place lipids \n";
 
