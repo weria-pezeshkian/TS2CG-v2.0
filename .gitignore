@@ -44,3 +44,5 @@ PCG
 PLM
 *.egg-info/
 build
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
