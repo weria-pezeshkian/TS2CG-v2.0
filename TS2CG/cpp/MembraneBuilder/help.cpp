@@ -36,9 +36,7 @@ help::help(std::string exe)
      std::cout<<" -function         string       backmap              backmap/analytical_shape  "<<"\n";
      std::cout<<" -WallBName        string       WL                   Name of the Wall beads  "<<"\n\n";
      std::cout<<" -WPointDir        bool         false                Just write the folder  "<<"\n\n";
-     std::cout<<" -skip_lipids      bool         false                skipping lipid placement step  "<<"\n\n";
 
-     
 //analytical_shape
      
      

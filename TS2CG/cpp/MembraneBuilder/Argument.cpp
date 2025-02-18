@@ -17,8 +17,7 @@ Argument::Argument(std::vector <std::string> argument)
             m_Function("backmap"),
             m_RCutOff(0.5),
             m_Iter(5),
-            m_Renorm(false),
-            m_SkipLipids(false)
+            m_Renorm(false)
 {
 
 
@@ -69,13 +68,6 @@ Argument::Argument(std::vector <std::string> argument)
                     std::cout<<"---> error: 332 \n";
                     exit(0);
                 }
-            }
-            else if(Arg1=="-skip_lipids")
-            {
-                
-                m_SkipLipids = true;
-                i=i-1;
-
             }
             else if(Arg1=="-h")
             {

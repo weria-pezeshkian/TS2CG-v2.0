@@ -65,7 +65,6 @@ public:
     inline const double GetRCutOff() const { return m_RCutOff; }
     inline Shape_1DSin Get1DSinState() const { return m_1DSinState; }
     inline bool GetMonolayer() const { return m_Monolayer; }
-    inline bool Skip_LipidPlacement() const { return m_SkipLipids; }
 
     bool m_WPointDir; ///< Flag for wall point direction, public to allow direct modification
 
@@ -87,7 +86,6 @@ private:
     bool m_Monolayer;                    ///< Monolayer flag
     double m_Iter;                       ///< Number of iterations for the algorithm
     double m_RCutOff;                    ///< Cutoff distance for interactions
-    bool m_SkipLipids;                    ///if true, do not place any lipid,
 
     Wall m_Wall;                         ///< Wall object storing wall-related data and settings
     Shape_1DSin m_1DSinState;            ///< Shape configuration for the 1D sine wave

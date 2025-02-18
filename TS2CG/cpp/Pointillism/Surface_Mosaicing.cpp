@@ -25,7 +25,8 @@ void Surface_Mosaicing::PerformMosaicing(MESH * pMesh)
     MosaicOneRound(pMesh);
     UpdateGeometry(m_pMesh);
 }
-Surface_Mosaicing::~Surface_Mosaicing() {
+Surface_Mosaicing::~Surface_Mosaicing()
+{
     
 }
 void  Surface_Mosaicing::GenerateMidVForAllLinks(std::vector<links *> vlink)
@@ -406,9 +407,10 @@ void Surface_Mosaicing::BestEstimateOfMidPointPossition(links *l, double *X, dou
       Dr(1)=(t_1(1)-t_2(1))/4;
 
   }
-  else {
+  else
+    {
         std::cout<<"Error: 12344! \n";
-  }
+    }
     // For highly rough surfaces
     {
         double drsize=Dr.norm();
@@ -437,19 +439,11 @@ void Surface_Mosaicing::BestEstimateOfMidPointPossition(links *l, double *X, dou
         
         
     }
-    Vec3D GDr = (Hous.Transpose(Hous))*Dr;
+    Vec3D GDr=(Hous.Transpose(Hous))*Dr;
     
-    if(isnan(GDr(0)) || isnan(GDr(1)) || isnan(GDr(2))){
-        x=xmid;
-        y=ymid;
-        z=zmid;
-    }
-    else{
-        x=xmid+GDr(0);
-        y=ymid+GDr(1);
-        z=zmid+GDr(2);
-    }
-
+    x=xmid+GDr(0);
+    y=ymid+GDr(1);
+    z=zmid+GDr(2);
     *X=x;
     *Y=y;
     *Z=z;
