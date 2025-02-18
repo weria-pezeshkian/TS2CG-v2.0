@@ -131,21 +131,25 @@ BackMap::BackMap(Argument *pArgu)
         if(RMpoint==false)
             std::exit(0);
     }
+    
+    std::vector<Domain*> pAllDomain;
+    
+    
+    
+    bool Renormalizedlipidratio = pArgu->GetRenorm();
+    m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
+    GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids
+    pAllDomain = GENDOMAIN.GetDomains();
+
+if(pArgu->Skip_LipidPlacement() == false){
     std::cout<<"---> generating domains using the input files \n";
 
 
 
-<<<<<<< HEAD
-    //bool Renormalizedlipidratio = pArgu->GetRenorm();
-    //m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
-    //GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids
-    //pAllDomain = GENDOMAIN.GetDomains();
-=======
-    bool Renormalizedlipidratio = pArgu->GetRenorm();
-    m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
-    GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids
-    std::vector<Domain*> pAllDomain = GENDOMAIN.GetDomains();
->>>>>>> 91958060ba99997c870ef89143fda25f5f1a03a1
+ //   bool Renormalizedlipidratio = pArgu->GetRenorm();
+  //  m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
+   // GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids
+   // pAllDomain = GENDOMAIN.GetDomains();
     //
     std::cout<<"---> now,  the domain info will be used to place lipids \n";
 
@@ -165,7 +169,10 @@ BackMap::BackMap(Argument *pArgu)
 
     std::string sms = InfoDomain(pAllDomain);
     std::cout<<sms;
-    
+}//    if(pArgu->Skip_LipidPlacement() == false){
+else{
+    std::cout<<"--> Note: We have skipped lipid placement as requested. \n";
+}
     //=============== write the wall info
     std::cout<<"---> attempting to make the wall beads \n";
     std::vector<bead> WB = pWall->GetWallBead();

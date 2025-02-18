@@ -9,6 +9,9 @@ GenerateUnitCells::GenerateUnitCells(std::vector< bead* > bead, Vec3D *pBox, dou
 	m_pBox=pBox;
     m_pAllBead=bead;
     m_CNTSize=cellsize;
+    if(m_CNTSize<cuttoff){
+        m_CNTSize = cuttoff;
+    }
     m_Cutoff = cuttoff*cuttoff;
 }
 
