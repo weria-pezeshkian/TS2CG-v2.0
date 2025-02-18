@@ -19,7 +19,7 @@ MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(std::string inputf
 
     m_InputFileName = inputfilename;
     m_TopologyFileName = topfilename;
-    
+
     //==== We read the inclusions type from the input file, we create inclusion types
     ReadTopology(topfilename);
 
@@ -32,7 +32,7 @@ MeshBluePrint CreateMashBluePrint::MashBluePrintFromInput_Top(std::string inputf
 }
 CreateMashBluePrint::~CreateMashBluePrint()
 {
-    
+
 }
 void CreateMashBluePrint::ReadTopology(std::string file)
 {
@@ -91,12 +91,12 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
         {
             tsi>>nver;
             getline(tsi,str);
-            
+
             for (int i=0;i<nver;i++)
             {
                 getline(tsi,str);
                 std::vector<std::string> S = f.split(str);
-                
+
                 if(S.size()<4)
                 {
                     std::cout<<"error ---> information of the vertex "<<i<<" is not sufficent in the tsi file \n";
@@ -117,7 +117,7 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
                     m_VertexMap.push_back(v);
                 }
             }
-            
+
         }
         else if(str=="triangle")
         {
@@ -140,7 +140,7 @@ void CreateMashBluePrint::Read_TSIFile(std::string tsifile)
                     t.v2=f.String_to_Int(S.at(2));
                     t.v3=f.String_to_Int(S.at(3));
                     m_TriangleMap.push_back(t);
-                    
+
                 }
             }
         }
@@ -232,7 +232,7 @@ void CreateMashBluePrint::Read_Mult_QFile(std::string topfile)
     {
         std::ifstream Qs;
         Qs.open((qfiles.at(fi)).c_str());
-        
+
         // first line is the box size and it should only contain 3 numbers;
         getline(Qs,str);
         std::vector<std::string> b = f.split(str);
@@ -317,7 +317,7 @@ void CreateMashBluePrint::Read_Mult_QFile(std::string topfile)
         }
         Qs.close();
     }
-    std::cout<<"trinagle is read "<<"\n";
+    std::cout<<"triangle is read "<<"\n";
 
 }
 void CreateMashBluePrint::GenerateIncFromInputfile()

@@ -28,12 +28,12 @@ help::help(std::string version,std::string exe)
         std::cout<<"        0   Ver1_id   Ver2_id   Ver3_id"<<"\n";
         std::cout<<"        1   Ver1_id   Ver2_id   Ver3_id"<<"\n\n";
         std::cout<<"-- Note: the number of the output points is always larger or equal the number of the vertices \n-- in the input triangulated surface.  With option -Mashno you can tune how many points you want (No_of_vertex*4^Mashno) "<<"\n";
-        std::cout<<"-- option -r check allows you can get some information about the input trinagulated surface   "<<"\n";
+        std::cout<<"-- option -r check allows you can get some information about the input triangulated surface   "<<"\n";
         std::cout<<"-- option -o allows you to specify a unique folder for the output files    "<<"\n";
         std::cout<<"-- option -smooth allows you to handle highly rough surfaces; However, try to avoid this option, since has it not been tested well yet.    "<<"\n";
         std::cout<<"-- option -monolayer allows you to generate a monolayer instead of bilayer. It should be either 1 or -1, which can invert the shape of the monolayer    "<<"\n\n";
         std::cout<<"=========================================================================================================="<<"\n\n";
-        std::cout<<"-- Pointillism: generating double layer points from a closed trinagulated surface   "<<"\n\n";
+        std::cout<<"-- Pointillism: generating double layer points from a closed triangulated surface   "<<"\n\n";
         std::cout<<"=========================================================================================================="<<"\n\n";
         std::cout<<"-------------------------------------------------------------------------------"<<"\n";
         std::cout<<"  option                type        default            description "<<"\n";
@@ -52,13 +52,13 @@ help::help(std::string version,std::string exe)
         std::cout<<"-- basic example: PLM  -TSfile Traj1.tsi -bilayerThickness 4  -rescalefactor 3 3 3 \n";
 
 
-        
+
     }
-    
+
 
 }
 
 help::~help()
 {
-    
+
 }

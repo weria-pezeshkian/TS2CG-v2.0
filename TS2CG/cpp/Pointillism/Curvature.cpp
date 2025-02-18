@@ -5,7 +5,7 @@
 #include "Tensor2.h"
 Curvature::Curvature()
 {
-    
+
 }
 Curvature::~Curvature()
 {
@@ -48,13 +48,13 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     //========
     Tensor2  SV;
     Tensor2 IT('I');
-    
+
     Tensor2 P=IT-IT.makeTen(Normal);
 
     Tensor2 Pt=P.Transpose(P);
     std::vector<links *> NLinks=m_pVertex->GetVLinkList();
 
-    // what if the edge vertex has one trinagle?
+    // what if the edge vertex has one triangle?
     for (std::vector<links *>::iterator it = NLinks.begin() ; it != NLinks.end(); ++it)
     {
        if((*it)->GetMirrorFlag()==true)
@@ -76,14 +76,14 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
            {
                Se=Se*(1.0/ff);
            }
-        
+
            Tensor2 Q=P.makeTen(Se);
-        
+
            SV=SV+(Q)*(we*he);
        }//if((*it)->GetMirrorFlag()==true)
     }
-    
-    
+
+
     /*
    // method in the paper
     Tensor2 SV2;
@@ -101,14 +101,14 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
        }//if((*it)->GetMirrorFlag()==true)
     }
     */
-    
+
     // end paper
-    
-    
+
+
     ///=============
     //==== Find Curvature and local frame
     //=============
-    
+
     Tensor2 Hous = Householder(Normal);
     Tensor2 LSV;// Local SV
     LSV=(Hous.Transpose(Hous))*(SV*Hous);    // LSV is the curvature matrix in the local frame, the it is a 2*2 minor matrix since all the 3 component are zero.
@@ -126,12 +126,12 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     c1=0.5*c1;      // c1 always will be larger then c2
     c2=b-delta;
     c2=0.5*c2;
-        
+
 
     }
     else if (fabs(delta)<0.0001)
     {
-        
+
     c1=0.5*b;
     c2=c1;
 
@@ -147,14 +147,14 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
     // if(true) in general we do not need this, only if we have directional inclsuions
     {
     Tensor2 EigenvMat('O');
-    
+
     double p=LSV(0,0);
     double q=LSV(0,1);
 
 
     double size=sqrt(q*q+(c1-p)*(c1-p));                   // The Eigenvectors can be calculated using this equation LSV*R=c1*R
 
-        
+
         if(size == 0.0){
             size = 1;
             q = 1;
@@ -174,12 +174,12 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
 
  // Tensor2 TransferMatGL=EigenvMat*Hous;   /// This matrix transfers vectors from Global coordinate to local coordinate//
  // Tensor2 TransferMatLG = TransferMatGL.Transpose(TransferMatGL);//// This matrix transfers vectors from local coordinate to global coordinate
-        
-        
+
+
         ///  this is correct, We can check by applying transpose(E)*t1 = (1,0,0)
-        
+
      Tensor2 TransferMatLG=Hous*EigenvMat;   /// This matrix transfers vectors from local coordinate to global coordinate
-        
+
        /* std::cout<<"===============\n";
         std::cout<<TransferMatLG(0,0)<<" "<<TransferMatLG(0,1)<<" "<<TransferMatLG(0,2)<<" \n";
         std::cout<<TransferMatLG(1,0)<<" "<<TransferMatLG(1,1)<<" "<<TransferMatLG(1,2)<<" \n";
@@ -187,7 +187,7 @@ void Curvature::SurfVertexCurvature(vertex * pvertex)
         */
 
      Tensor2 TransferMatGL=TransferMatLG.Transpose(TransferMatLG);   /// This matrix transfers vectors from Global coordinate to local coordinate
-        
+
         m_pVertex->UpdateL2GTransferMatrix(TransferMatLG);
         m_pVertex->UpdateG2LTransferMatrix(TransferMatGL);
     }
@@ -201,7 +201,7 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     // first we obtain the vertex area and normal. Area is not important here as the vertex is an edge vertex
     m_pVertex=pvertex;
     std::vector<triangle *> Ntr=m_pVertex->GetVTraingleList();
-    
+
     double Area=0.0;
     Vec3D Normal;
     for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
@@ -225,12 +225,12 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     no=1.0/no;
     Normal=Normal*no;
     m_pVertex->UpdateNormal_Area(Normal,Area);
-    
 
-    
+
+
     // the shape of the system                          //         v
                                                         //     l1 / \ l2
-                                                 
+
     links* link1 = m_pVertex->m_pPrecedingEdgeLink;
     links* link2 = m_pVertex->m_pEdgeLink;
 
@@ -254,16 +254,16 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
     Tensor2 TransferMatLG=TransferMatGL.Transpose(TransferMatGL);
     m_pVertex->UpdateL2GTransferMatrix(TransferMatLG);
     m_pVertex->UpdateG2LTransferMatrix(TransferMatGL);
-    
-    
-    
-    
+
+
+
+
 #if TEST_MODE == Enabled
 
        Vec3D p1(1,0,0);
        Vec3D p2(0,1,0);
         Vec3D p3(0,0,1);
-    
+
        p1=TransferMatLG*p1;
        p2=TransferMatLG*p2;
         p3=TransferMatLG*p3;
@@ -277,29 +277,29 @@ void Curvature::EdgeVertexCurvature(vertex * pvertex)
 
 
 #endif
-    
-    
-    
-    
+
+
+
+
 }
 Tensor2 Curvature::Householder(Vec3D N)
 {
-    
+
     Tensor2 Hous;
     Vec3D Zk;
     Zk(2)=1.0;
     Zk=Zk+N;
     Zk=Zk*(1.0/Zk.norm());
-    
+
     Tensor2 I('I');
     Tensor2 W=Hous.makeTen(Zk);
     Hous=(I-W*2)*(-1);
-    
+
     return Hous;
 
-    
 
-   
+
+
     /*
     Zk(0) = 0;Zk(1) = 0;
     Zk(2)=1.0;
@@ -314,21 +314,21 @@ Tensor2 Curvature::Householder(Vec3D N)
     Zk=Zk*(1.0/Zk.norm());
     W=Hous.makeTen(Zk);
     Hous=(I-W*2)*(SignT);
-    
-    
+
+
     std::cout<<"====== old ===========\n";
     std::cout<<Hous(0,0)<<"   "<<Hous(0,1)<<"   "<<Hous(0,2)<<"\n";
     std::cout<<Hous(1,0)<<"   "<<Hous(1,1)<<"   "<<Hous(1,2)<<"\n";
     std::cout<<Hous(2,0)<<"   "<<Hous(2,1)<<"   "<<Hous(2,2)<<"\n";*/
    // double SignT=1;
-   
+
 }
 /// normal vector update
 Vec3D Curvature::Calculate_Vertex_Normal(vertex *pvertex)
 {
     // first we obtain the vertex area and normal.
     std::vector<triangle *> Ntr=pvertex->GetVTraingleList();
-    
+
     double Area=0.0;
     Vec3D Normal;
     for (std::vector<triangle *>::iterator it = Ntr.begin() ; it != Ntr.end(); ++it)
@@ -358,7 +358,7 @@ Vec3D Curvature::Calculate_Vertex_Normal(vertex *pvertex)
     no=1.0/no;
     Normal=Normal*no;
     pvertex->UpdateNormal_Area(Normal,Area);
-    
+
 
     return Normal;
 }

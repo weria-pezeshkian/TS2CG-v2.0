@@ -14,7 +14,7 @@ link object (edge):
 class links
 {
 public:
-    
+
 	links(int id, vertex *v1, vertex *v2, triangle *t1);
 	links(int id);
 	 ~links();
@@ -38,13 +38,13 @@ public:
         inline double GetIntEnergy()                      {return m_IntEnergy;}
         inline double GetEdgeSize()                      {return m_EdgeSize;}
         inline Vec3D GetEdgeVector()                      {return m_EdgeVector;}
-    
-    
+
+
     // specific for this function
     inline vertex *GetV0()                       {return m_V0;}
 
 
-    
+
 
 
 public:
@@ -81,7 +81,7 @@ vertex  *m_V2;
 vertex  *m_V3;
 vertex  *m_V0;
 links   *m_mirorlink;
-links   *m_neighborlink1; /// triangle is 1-2-3;  the link is 1->2   this point to 2->3    
+links   *m_neighborlink1; /// triangle is 1-2-3;  the link is 1->2   this point to 2->3
 links   *m_neighborlink2; /// the link is 1->2   this is 3->1
 
 
@@ -91,7 +91,7 @@ links   *m_neighborlink2; /// the link is 1->2   this is 3->1
     int m_LinkSide;
 
     private:
-    Vec3D m_Normal;    // average of the two trinagule normal for edge links, it is 
+    Vec3D m_Normal;    // average of the two triangle normal for edge links, it is
 
 
 
@@ -99,8 +99,8 @@ links   *m_neighborlink2; /// the link is 1->2   this is 3->1
     double m_He;
     double m_IntEnergy;
     int m_SimTimeStep;
-    
-    
+
+
 public:
     Vec3D m_EdgeVector;    // a vector along the edge
     double m_EdgeSize;    // size of the edge
