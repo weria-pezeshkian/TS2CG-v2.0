@@ -27,6 +27,7 @@ class Membrane:
             'c1': data[15],        # First principal curvature
             'c2': data[16]         # Second principal curvature
         }
+        self.edges = data[17].astype(bool) # Boolean array if point is edge
 
     @property
     def mean_curvature(self) -> np.ndarray:
@@ -42,3 +43,7 @@ class Membrane:
         """Get coordinates of all points in a specific domain."""
         mask = self.domain_ids == domain_id
         return self.coordinates[mask]
+
+    def get_edge_ids(self) -> np.ndarray:
+        """Get ids of all points that are an edge."""
+        return np.where(self.edges)[0]
