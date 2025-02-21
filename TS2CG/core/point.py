@@ -176,7 +176,7 @@ class Point:
 
     def _save_single_membrane(self, output_path: Path, membrane):
         """Helper method to save a single membrane layer."""
-        data = np.zeros((17, len(membrane.ids)))
+        data = np.zeros((18, len(membrane.ids)))
         data[0] = membrane.ids
         data[1] = membrane.domain_ids
         data[2] = membrane.area
@@ -186,6 +186,7 @@ class Point:
         data[12:15] = membrane.principal_vectors['p2'].T
         data[15] = membrane.curvature['c1']
         data[16] = membrane.curvature['c2']
+        data[17] = membrane.edges.astype(int)
 
         # Create header
         headers = []
@@ -196,7 +197,7 @@ class Point:
 
         headers.extend([
             f"< Point NoPoints     {len(membrane.ids)}>",
-            "< id domain_id area X Y Z Nx Ny Nz P1x P1y P1z P2x P2y P2z C1 C2  >",
+            "< id domain_id area X Y Z Nx Ny Nz P1x P1y P1z P2x P2y P2z C1 C2 vtype >",
             f"< {'Outer' if 'Outer' in output_path.name else 'Inner'} >"
         ])
 
@@ -207,7 +208,7 @@ class Point:
             data.T,
             header=header,
             comments='',
-            fmt = ['%10d', '%4d', '%9.3f'] + ['%9.3f']*3 + ['%7.3f']*11
+            fmt = ['%10d', '%4d', '%9.3f'] + ['%9.3f']*3 + ['%7.3f']*11 + ['%9d']
         )
         logger.info(f"Saved {len(membrane.ids)} points to {output_path.name}")
 
