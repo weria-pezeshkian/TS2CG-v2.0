@@ -26,7 +26,7 @@
 
 
 //===== command line key tages
-#define G_STRExt                        "str"
+#define G_STR_FILE_TAG                  "str"
 #define FunctionType                    "-function"
 #define G_HELPEx                        "-h"
 #define LipidLibraryFileName            "-LLIB"

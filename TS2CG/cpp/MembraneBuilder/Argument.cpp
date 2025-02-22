@@ -167,7 +167,7 @@ Argument::Argument(std::vector <std::string> argument)
                     m_Health = false;
                 }
             }
-            else if(Arg1 == G_STRExt)
+            else if(Arg1 == G_STR_FILE_TAG)
             {
                 m_StrFileName = m_Argument.at(i+1);
                 if(m_StrFileName.substr(m_StrFileName.find_last_of(".") + 1) != STRExt)
