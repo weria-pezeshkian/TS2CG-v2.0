@@ -120,6 +120,7 @@ BackMap::BackMap(Argument *pArgu)
     std::cout<<"---> proteins are placed, now we remove points that are close to the proteins \n";
     
     //=== removing points closeby the proteins
+    if(!pArgu->m_KEEP_POINTS_CLOSE_TO_PROTEINS)
     {
         double RCutOff = pArgu->GetRCutOff();     /// That will be counted as a cutoff for the protein_lipid distance
         std::vector<bead*> tempropbeads;
@@ -128,14 +129,13 @@ BackMap::BackMap(Argument *pArgu)
             tempropbeads.push_back(&(*it));
         
         bool RMpoint = RemovePointsCloseToBeadList(pPointUp, pPointDown, tempropbeads, RCutOff, pBox);
-        if(RMpoint==false)
+        
+        if(RMpoint==false){
             std::exit(0);
+        }
     }
     
     std::vector<Domain*> pAllDomain;
-    
-    
-    
     bool Renormalizedlipidratio = pArgu->GetRenorm();
     m_Iter = pArgu->GetIter();  // how many iteration should be made to make sure enough lipid is placed.
     GenDomains GENDOMAIN(strfilename,pPointUp,pPointDown,Renormalizedlipidratio);  // this somehow reads the lipids

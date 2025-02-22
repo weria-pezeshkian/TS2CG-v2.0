@@ -17,16 +17,28 @@
 #define Precision               8
 #define Enabled                 1
 #define Disabled                2
-#define SoftWareVersion         "2.0"
-#define ExecutableName          "PCG"
-#define SoftWareName            "CG Membrane builder"
-#define LIBExt                  "LIB"
-#define STRExt                  "str"
-#define FunctionType            "-function"
-#define HELPEx                  "-h"
-#define LipidLibraryFileName    "-LLIB"
-#define GET_SEED                "-seed"
+//==== version and file extenions 
+#define SoftWareVersion                 "2.0"
+#define ExecutableName                  "PCG"
+#define SoftWareName                    "CG Membrane builder"
+#define LIBExt                          "LIB"
+#define STRExt                          "str"
 
+
+//===== command line key tages
+#define G_STRExt                        "str"
+#define FunctionType                    "-function"
+#define G_HELPEx                        "-h"
+#define LipidLibraryFileName            "-LLIB"
+#define GET_SEED                        "-seed"
+#define INC_DIR_TYPE                    "-incdirtype"
+#define G_SKIP_LIPID_PLACEMENT            "-skip_lipids"
+#define G_POINT_FOLDER                  "-dts"
+#define G_DEFAULT_TAG                   "-defout"
+#define G_BOND_LENGTH                   "-Bondlength"
+#define G_RADIUS_CUT_OFF                   "-Rcutoff"
+#define G_renormalized_lipid_ratio          "-renorm"
+#define G_KEEP_POINTS_CLOSE_TO_PROTEINS          "-keep"
 
 
 

@@ -18,7 +18,8 @@ Argument::Argument(std::vector <std::string> argument)
             m_RCutOff(0.5),
             m_Iter(5),
             m_Renorm(false),
-            m_SkipLipids(false)
+            m_SkipLipids(false),
+            m_KEEP_POINTS_CLOSE_TO_PROTEINS(false)
 {
 
 
@@ -30,7 +31,7 @@ Argument::Argument(std::vector <std::string> argument)
         for (long i=1;i<m_Argument.size();i=i+2)
         {
             Arg1 = m_Argument[i];
-            if(Arg1=="-dts") //  "-dts"
+            if(Arg1 == G_POINT_FOLDER) //  "-dts"
             {
                 if(m_Argument.size()>i+1){
                     m_DTSFolder = m_Argument[i+1];
@@ -60,7 +61,7 @@ Argument::Argument(std::vector <std::string> argument)
 
                 }
             }
-            else if(Arg1=="-defout")
+            else if(Arg1==G_DEFAULT_TAG)
             {
                 if(m_Argument.size()>i+1){
                     m_GeneralOutputFilename = m_Argument.at(i+1);
@@ -70,19 +71,26 @@ Argument::Argument(std::vector <std::string> argument)
                     exit(0);
                 }
             }
-            else if(Arg1=="-skip_lipids")
+            else if(Arg1 == G_SKIP_LIPID_PLACEMENT)
             {
                 
                 m_SkipLipids = true;
                 i=i-1;
 
             }
-            else if(Arg1=="-h")
+            else if(Arg1 == G_KEEP_POINTS_CLOSE_TO_PROTEINS)
+            {
+                
+                m_KEEP_POINTS_CLOSE_TO_PROTEINS = true;
+                i=i-1;
+
+            }
+            else if(Arg1 == G_HELPEx)
             {
                 help helpmessage(m_Argument.at(0));
                 exit(0);
             }
-            else if(Arg1=="-renorm")
+            else if(Arg1 == G_renormalized_lipid_ratio)
             {
                 i=i-1;
                 m_Renorm = true;
@@ -94,7 +102,7 @@ Argument::Argument(std::vector <std::string> argument)
                 m_Monolayer = true;
 
             }
-            else if(Arg1=="-incdirtype")
+            else if(Arg1 == INC_DIR_TYPE)
             {
                 m_InclusionDirectionType = m_Argument.at(i+1);
                 if(m_InclusionDirectionType!="Local" || m_InclusionDirectionType!="Global")
@@ -159,7 +167,7 @@ Argument::Argument(std::vector <std::string> argument)
                     m_Health = false;
                 }
             }
-            else if(Arg1=="-str")
+            else if(Arg1 == G_STRExt)
             {
                 m_StrFileName = m_Argument.at(i+1);
                 if(m_StrFileName.substr(m_StrFileName.find_last_of(".") + 1) != STRExt)
@@ -171,10 +179,10 @@ Argument::Argument(std::vector <std::string> argument)
             {
                 m_Seed = f.String_to_Double(m_Argument.at(i+1));
             }
-            else if(Arg1 == "-Rcutoff") {
+            else if(Arg1 == G_RADIUS_CUT_OFF) {
                 m_RCutOff = f.String_to_Double(m_Argument.at(i+1));
             }
-            else if(Arg1 == "-Bondlength") {
+            else if(Arg1 == G_BOND_LENGTH) {
                 m_BondL = f.String_to_Double(m_Argument.at(i+1));
             }
             else

@@ -24,19 +24,21 @@ help::help(std::string exe)
      std::cout<<"-------------------------------------------------------------------------------"<<"\n";
      std::cout<<"  option            type        default            description "<<"\n";
      std::cout<<"-------------------------------------------------------------------------------"<<"\n";
-     std::cout<<" -dts              string       point                dts folder address "<<"\n";
-     std::cout<<" -str              string       input."<<STRExt<<"            input file "<<"\n";
-     std::cout<<" -defout           string       output               output files prefix "<<"\n";
-     std::cout<<" -Bondlength       double       0.1                  initial bond guess;  "<<"\n";
-     std::cout<<" -LLIB             string       no                   CG lipid library file name;  "<<"\n";
-     std::cout<<" -renorm           ------       no                   renormalized the lipid molar ratio  "<<"\n";
+     std::cout<<G_POINT_FOLDER<<"           string       point                dts folder address "<<"\n";
+     std::cout<<G_STRExt<<"             string       input."<<STRExt<<"            input file "<<"\n";
+     std::cout<<G_DEFAULT_TAG<<"        string       output               output files prefix "<<"\n";
+     std::cout<<G_BOND_LENGTH<<"       double       0.1                  initial bond guess;  "<<"\n";
+     std::cout<<LipidLibraryFileName<<"            string       no                   CG lipid library file name;  "<<"\n";
+     std::cout<<G_renormalized_lipid_ratio<<"           ------       no                   renormalized the lipid molar ratio  "<<"\n";
      std::cout<<" -iter             double       4                    the number of point selection is iter*number of the point  "<<"\n";
-     std::cout<<" -incdirtype       string       Global               the type of protein direction data (Local/Global)  "<<"\n";
+     std::cout<<INC_DIR_TYPE<<"     string       Global               the type of protein direction data (Local/Global)  "<<"\n";
      std::cout<<" -Wall             ------       off                  a flag to create a wall around the membrane  "<<"\n";
-     std::cout<<" -function         string       backmap              backmap/analytical_shape  "<<"\n";
+     std::cout<<FunctionType<<"         string       backmap              backmap/analytical_shape  "<<"\n";
      std::cout<<" -WallBName        string       WL                   Name of the Wall beads  "<<"\n\n";
      std::cout<<" -WPointDir        bool         false                Just write the folder  "<<"\n\n";
-     std::cout<<" -skip_lipids      bool         false                skipping lipid placement step  "<<"\n\n";
+     std::cout<<G_SKIP_LIPID_PLACEMENT<<"    bool         false                skipping lipid placement step  "<<"\n\n";
+     std::cout<<G_RADIUS_CUT_OFF<<"    double         0.5              distance between proteins and lipids  "<<"\n\n";
+     std::cout<<G_KEEP_POINTS_CLOSE_TO_PROTEINS<<"    bool         false            keep points close to proteins  "<<"\n\n";
 
      
 //analytical_shape

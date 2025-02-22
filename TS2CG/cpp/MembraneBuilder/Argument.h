@@ -68,7 +68,7 @@ public:
     inline bool Skip_LipidPlacement() const { return m_SkipLipids; }
 
     bool m_WPointDir; ///< Flag for wall point direction, public to allow direct modification
-
+    bool m_KEEP_POINTS_CLOSE_TO_PROTEINS;
 private:
     std::vector<std::string> m_Argument; ///< Vector storing command-line arguments
     std::string m_DTSFolder;             ///< DTS folder name
