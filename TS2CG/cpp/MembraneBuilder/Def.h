@@ -39,6 +39,7 @@
 #define G_RADIUS_CUT_OFF                   "-Rcutoff"
 #define G_renormalized_lipid_ratio          "-renorm"
 #define G_KEEP_POINTS_CLOSE_TO_PROTEINS          "-keep"
+#define G_PRINT_LESS_OUTPUTS                    "-less"
 
 
 

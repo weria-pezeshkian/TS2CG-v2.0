@@ -56,6 +56,9 @@ public:
     // since 2023
 private:
     void  GenerateMidVForAllLinks(std::vector<links *> vlink);
+
+//---
+    bool m_Mash_IS_Smooth;
     
 };
 

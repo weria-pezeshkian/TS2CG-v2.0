@@ -105,6 +105,11 @@ help::help(std::string exe)
                   << std::setw(15) << "bool"
                   << std::setw(20) << "false"
                   << "keep points close to proteins\n";
+        
+        std::cout << std::left << std::setw(20) << G_PRINT_LESS_OUTPUTS
+                  << std::setw(15) << "bool"
+                  << std::setw(20) << "false"
+                  << "print less outputs\n";
         std::cout << "=========================================================================== \n";
         std::cout << "basic example:  "<<ExecutableName<<" "<<G_POINT_FOLDER<<"  point "<<G_STR_FILE_TAG<<" input.str \n";
     }
@@ -114,3 +119,4 @@ help::~help()
 {
     // Destructor implementation (if needed)
 }
+

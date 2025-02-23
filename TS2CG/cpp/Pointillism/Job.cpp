@@ -9,14 +9,14 @@ Job::Job(std::vector <std::string> argument)
      * This is a class to call different functions: at the moment, only one exist
      */
 
-std::string exacutable=argument.at(0);
+        std::string exacutable=argument.at(0);
         if(TrimNameFromPath(exacutable) == Binary_Name)
         {
             Edit_configuration B(argument);
         }
         else
         {
-            std::cout<<argument.at(0)<<"error--> unrecognized executable binary name "<<argument.at(0)<<"\n";
+            std::cout<<" ---> error: unrecognized executable binary name: "<<argument.at(0)<<"\n";
         }
 }
 Job::~Job()

@@ -18,7 +18,18 @@
 /*
  This has been updated in Sept 2023. This software is now both backmapping and also input generator.
  */
-Edit_configuration::Edit_configuration( std::vector <std::string> Arguments)
+Edit_configuration::Edit_configuration( std::vector <std::string> Arguments) :
+                    m_LessOutPut (false),           // print as you wish
+                    m_smooth (false),               // Smoothing flag
+                    m_Folder("point"),               // Default output folder name
+                    m_TaskName("PLM"),             // Default task name
+                    m_monolayer(0),                // Monolayer flag (0 for bilayer)
+                    m_FindnewBox(false),          // Flag to find the smallest possible box
+                    m_MosAlType("Type1"),          // Default algorithm type
+                    m_BilayerThickness(3.8),       // Default bilayer thickness
+                    m_Iteration(-1),               // Default degree of meshing (disabled)
+                    m_MeshFileName("TS.q"),        // Default mesh file name
+                    m_AP(0.62)                    // Default area per lipid
 {
     // Initialize the Variables to their default values
     InitializeVariables();
@@ -53,18 +64,21 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments)
             std::cout<<"error--> creating directory  "<<m_Folder<<"\n";
             exit(1);
         }
-        const int dir_err2 = system(("mkdir -p "+m_Folder+"visualization_data").c_str());
-        if (-1 == dir_err2)
-        {
+        if(!m_LessOutPut){
+          const int dir_err2 = system(("mkdir -p "+m_Folder+"visualization_data").c_str());
+          if (-1 == dir_err2)
+          {
             std::cout<<"error--> creating directory  visualization_data"<<"\n";
             exit(1);
+          }
         }
                 BackMapOneLayer(1 , m_MeshFileName, H);
                 if(m_monolayer==0)
                 BackMapOneLayer(-1 , m_MeshFileName, H);
   }
-  else
-    std::cout<<" error--> unrecognized Task \n";
+  else {
+      std::cout<<" error--> unrecognized Task \n";
+  }
 }
 Edit_configuration::~Edit_configuration()
 {
@@ -203,7 +217,7 @@ void Edit_configuration::VertexInfo(std::string file){
 }
 
 
-/// ====== Updates in 2023
+/// ====== Updates in 2025
 void Edit_configuration::UpdateVariables(const std::vector<std::string>& Arguments) {
     Nfunction f;  // Utility object for pre-made functions
     std::vector<std::string> v_error;  // To store error messages
@@ -261,6 +275,9 @@ void Edit_configuration::UpdateVariables(const std::vector<std::string>& Argumen
             } else if (Arguments[i] == Def_Monolayer) {
                 m_monolayer = f.String_to_Int(Arguments[i + 1]);
                 m_BilayerThickness = 0;
+            } else if (Arguments[i] == Def_PrintLessPutput) {
+                    m_LessOutPut = true;
+                    --i;  // No additional argument for this flag
             } else {
                 std::string error = "---> error: Unrecognized argument < " + Arguments[i] + " >";
                 v_error.push_back(error);
@@ -297,19 +314,9 @@ void Edit_configuration::UpdateVariables(const std::vector<std::string>& Argumen
 }
 void Edit_configuration::InitializeVariables() {
     // Initialize variables with default values
-    m_smooth = false;               // Smoothing flag
-    m_Folder = "point";             // Default output folder name
-    m_TaskName = "PLM";             // Default task name
-    m_monolayer = 0;                // Monolayer flag (0 for bilayer)
-    m_FindnewBox = false;           // Flag to find the smallest possible box
-    m_MosAlType = "Type1";          // Default algorithm type
-    m_BilayerThickness = 3.8;       // Default bilayer thickness
     m_Zoom(0) = 1;                  // Default zoom factor in x-direction
     m_Zoom(1) = 1;                  // Default zoom factor in y-direction
     m_Zoom(2) = 1;                  // Default zoom factor in z-direction
-    m_Iteration = -1;               // Default degree of meshing (disabled)
-    m_MeshFileName = "TS.q";        // Default mesh file name
-    m_AP = 0.62;                    // Default area per lipid
 }
 double  Edit_configuration::PPBCM_Cluster(double Lx, std::vector <double> X)
 {
@@ -476,7 +483,7 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
     double Ly=(*m_pBox)(1);
     double Lz=(*m_pBox)(2);
    
-    {
+    if(!m_LessOutPut) {
         Vec3D BoxSides=(*m_pBox);
         std::string filename;
         

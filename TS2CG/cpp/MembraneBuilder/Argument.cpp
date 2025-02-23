@@ -19,7 +19,8 @@ Argument::Argument(std::vector <std::string> argument)
             m_Iter(5),
             m_Renorm(false),
             m_SkipLipids(false),
-            m_KEEP_POINTS_CLOSE_TO_PROTEINS(false)
+            m_KEEP_POINTS_CLOSE_TO_PROTEINS(false),
+            m_PRINT_LESS_OUTPUT(false)
 {
 
 
@@ -82,6 +83,12 @@ Argument::Argument(std::vector <std::string> argument)
             {
                 
                 m_KEEP_POINTS_CLOSE_TO_PROTEINS = true;
+                i=i-1;
+
+            }
+            else if(Arg1 == G_PRINT_LESS_OUTPUTS)
+            {
+                m_PRINT_LESS_OUTPUT = true;
                 i=i-1;
 
             }

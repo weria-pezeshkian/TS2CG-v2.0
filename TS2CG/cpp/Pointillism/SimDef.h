@@ -25,6 +25,8 @@
 #define Def_SmoothingFlag        "-smooth"
 #define Def_resizebox           "-resizebox"
 #define Def_Monolayer           "-monolayer"
+#define Def_PrintLessPutput           "-less"
+
 
 #define KBT 1
 #define PI 3.14159265359

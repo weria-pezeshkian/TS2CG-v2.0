@@ -205,6 +205,9 @@ else{
         std::cout<<" █████████  outputs have been generated, but there were "<< m_Warning<<" warnings in the process █████████████  \n";
     }
     Welldone();
+    
+    
+
 
 }
 BackMap::~BackMap()
@@ -543,7 +546,8 @@ void BackMap::ExcludePointsUsingExclusion(std::vector<exclusion*> &pExc, std::ve
         {
             int pointid=(*it)->GetPointID();
             if(pointid<0 || pointid>m_pPointUp.size()){
-                std::cout<<"---> error: id = 23456: please report to the developer with the error id name \n";
+                std::cout<<"---> error: id = PCG23456: please report to the developer with the error id name \n";
+                exit(-1);
             }
             
             point *Up_p1=m_pPointUp.at(pointid);

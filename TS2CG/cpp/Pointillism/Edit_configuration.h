@@ -39,6 +39,7 @@ Vec3D *m_pBox;
     double m_minRoughness;
     bool m_smooth;
     int m_monolayer;
+    bool m_LessOutPut;
     void Rescaling(Vec3D zoom , MESH *pMesh);   // rescale the position and the box based on a vector
     //void UpdateGeometry( );  // updates curvature, area etc of each triangle, vertex etc
     void UpdateGeometry(MESH *pmesh);  // updates curvature, area etc of each triangle, vertex etc

@@ -90,7 +90,12 @@ help::help(std::string version, std::string exe)
                   << std::setw(15) << "int"
                   << std::setw(20) << "1"
                   << "number of Mosaicing, your point number grows as 4^Mashno\n";
-
+        
+        std::cout << std::left << std::setw(20) << Def_PrintLessPutput
+                  << std::setw(15) << "bool"
+                  << std::setw(20) << "false"
+                  << "print less outputs\n";
+        
         std::cout << std::left << std::setw(20) << Def_AlgType
                   << std::setw(15) << "string"
                   << std::setw(20) << "Type1"

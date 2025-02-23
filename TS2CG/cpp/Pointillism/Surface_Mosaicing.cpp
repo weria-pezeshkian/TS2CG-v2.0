@@ -11,11 +11,15 @@ Surface_Mosaicing::Surface_Mosaicing(std::string altype, bool smooth)
 {
         m_AlgorithmType = altype;
         m_smooth = smooth;
+    m_Mash_IS_Smooth = true;
 
-}Surface_Mosaicing::Surface_Mosaicing()
+}
+Surface_Mosaicing::Surface_Mosaicing()
 {
     m_AlgorithmType = "Type1";
     m_smooth = false;
+    m_Mash_IS_Smooth = true;
+
 }
 void Surface_Mosaicing::PerformMosaicing(MESH * pMesh)
 {
@@ -42,7 +46,7 @@ void  Surface_Mosaicing::GenerateMidVForAllLinks(std::vector<links *> vlink)
                 if(isnan(x))
                 {
                     std::cout<<"error---> estimate of the mid point is bad "<<x<<"  "<<y<<"  "<<z<<"\n";
-                    exit(0);
+                    exit(1);
                 }
                 vertex v(id,x,y,z);
                 v.UpdateBox(m_pBox);
@@ -123,8 +127,10 @@ void Surface_Mosaicing::MosaicOneRound(MESH * pMesh)
     for (std::vector<inclusion>::iterator it = (m_Mesh.m_Inclusion).begin() ; it != (m_Mesh.m_Inclusion).end(); ++it)
     {
         int vid = (it->Getvertex())->GetVID();
-        if(vid>=(m_Mesh.m_Vertex).size())
-            std::cout<<"error 3234---> should not happen \n";
+        if(vid>=(m_Mesh.m_Vertex).size()){
+                std::cout<<"---> error: something wrong here, report to developer and send this id: PLM9942340 \n";
+                exit(1);
+        }
         it->Updatevertex(&((m_Mesh.m_Vertex)[vid]));
         (m_Mesh.m_pInclusion).push_back(&(*it));
 
@@ -132,8 +138,10 @@ void Surface_Mosaicing::MosaicOneRound(MESH * pMesh)
     for (std::vector<exclusion>::iterator it = (m_Mesh.m_Exclusion).begin() ; it != (m_Mesh.m_Exclusion).end(); ++it)
     {
         int vid = (it->Getvertex())->GetVID();
-        if(vid>=(m_Mesh.m_Vertex).size())
-            std::cout<<"error 3234---> should not happen \n";
+        if(vid>=(m_Mesh.m_Vertex).size()){
+            std::cout<<"---> error: something wrong here, report to developer and send this id: PLM9942333 \n";
+            exit(1);
+        }
         it->Updatevertex(&((m_Mesh.m_Vertex)[vid]));
         (m_Mesh.m_pExclusion).push_back(&(*it));
 
@@ -407,7 +415,8 @@ void Surface_Mosaicing::BestEstimateOfMidPointPossition(links *l, double *X, dou
 
   }
   else {
-        std::cout<<"Error: 12344! \n";
+      std::cout<<"---> error: something wrong here, report to developer and send this id: PLM0983741 \n";
+      exit(1);
   }
     // For highly rough surfaces
     {
@@ -423,15 +432,8 @@ void Surface_Mosaicing::BestEstimateOfMidPointPossition(links *l, double *X, dou
      }
     else
     {
-        if(drsize>0.5*Linklenght)
-        {
-            // no much doing
-           /* pv1->UpdateOwnInclusion(true);
-            pv1->UpdateInclusion(m_Inc.at(0));
-            pv2->UpdateOwnInclusion(true);
-            pv2->UpdateInclusion(m_Inc.at(0));*/
-          
-          std::cout<<"warning: the surfaces is very rough, you may use option -smooth \n";
+        if(drsize>0.5*Linklenght && m_Mash_IS_Smooth) {
+            std::cout << "---> Warning: The surface is very rough. Consider using the '-smooth' option.\n";
         }
     }
         
@@ -532,55 +534,41 @@ void Surface_Mosaicing::RoughnessOfALink(links *l, double *linklength, double *m
     Lo_geoV2(2)=0;
     Lo_geoV2=Lo_geoV2*(1/(Lo_geoV2.norm()));
     Vec3D Glo_geoV2=(pv2->GetL2GTransferMatrix())*Lo_geoV2;
-    
-    
-    
-    
+
     Tensor2 Hous;
     Vec3D Zk;
     Zk(2)=1.0;
     double SignT=1;
     
-    if((1+geodesic_dir(2))>(1-geodesic_dir(2)))
-    {
+    if((1+geodesic_dir(2))>(1-geodesic_dir(2))) {
         Zk=Zk+geodesic_dir;
         SignT=-1;
-        
     }
-    else if((1+geodesic_dir(2))<=(1-geodesic_dir(2)))
-    {
+    else if((1+geodesic_dir(2))<=(1-geodesic_dir(2))) {
         Zk=Zk-geodesic_dir;
     }
     
     Zk=Zk*(1.0/Zk.norm());
-    
     
     Tensor2 I('I');
     Tensor2 W=Hous.makeTen(Zk);
     
     Hous=(I-(W*(W.Transpose(W)))*2)*SignT;
     
-    
-    
-    
     Vec3D t_2=Hous*Glo_geoV2;
     Vec3D t_1=Hous*Glo_geoV1;
     
     t_2=t_2*(1/t_2(2));
     t_1=t_1*(1/t_1(2));
-    
-    
-    
+
     t_2=t_2*(Linklenght/2.0);
     t_1=t_1*(Linklenght/2.0);
     
     /// test case to see if inclduign curvature make it better
     Vec3D Dr(0,0,0);
     
-    if(m_AlgorithmType == "Type2")
-    {
-        
-        
+    if(m_AlgorithmType == "Type2") {
+
         Vec3D N1=pv1->GetNormalVector();
         Vec3D N2=pv2->GetNormalVector();
         std::vector <double> C1=pv1->GetCurvature();
@@ -594,18 +582,12 @@ void Surface_Mosaicing::RoughnessOfALink(links *l, double *linklength, double *m
         
         double Curve1=C1.at(0)*Cos1*Cos1+C1.at(1)*Sin1*Sin1;
         double Curve2=C2.at(0)*Cos2*Cos2+C2.at(1)*Sin2*Sin2;
-        
-        
+
         double D2X_1=Curve1*(t_1.dot(t_1,t_1))*(2*N1(2)*t_1(0)/Linklenght-N1(0));
         double D2Y_1=Curve1*(t_1.dot(t_1,t_1))*(2*N1(2)*t_1(1)/Linklenght-N1(1));
         double D2X_2=Curve2*(t_2.dot(t_2,t_2))*(2*N2(2)*t_2(0)/Linklenght-N2(0));
         double D2Y_2=Curve2*(t_2.dot(t_2,t_2))*(2*N2(2)*t_2(1)/Linklenght-N2(1));
-        
-        
-        
-        
-        
-        
+
         double X_0=(D2X_1+D2X_2+5*(t_1(0)-t_2(0)))/16.0;
         double Y_0=(D2Y_1+D2Y_2+5*(t_1(1)-t_2(1)))/16.0;
         
@@ -622,7 +604,8 @@ void Surface_Mosaicing::RoughnessOfALink(links *l, double *linklength, double *m
     }
     else
     {
-        std::cout<<"Error: 12344! \n";
+        std::cout<<"---> error: something wrong here, report to developer and send this id: PLM2342340 \n";
+        exit(1);
     }
 
         double drsize=Dr.norm();

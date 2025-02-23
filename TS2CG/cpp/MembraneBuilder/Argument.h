@@ -69,6 +69,8 @@ public:
 
     bool m_WPointDir; ///< Flag for wall point direction, public to allow direct modification
     bool m_KEEP_POINTS_CLOSE_TO_PROTEINS;
+    bool m_PRINT_LESS_OUTPUT;
+
 private:
     std::vector<std::string> m_Argument; ///< Vector storing command-line arguments
     std::string m_DTSFolder;             ///< DTS folder name
