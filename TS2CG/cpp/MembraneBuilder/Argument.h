@@ -93,6 +93,9 @@ private:
 
     Wall m_Wall;                         ///< Wall object storing wall-related data and settings
     Shape_1DSin m_1DSinState;            ///< Shape configuration for the 1D sine wave
+    ///
+    ///
+    bool ValidateVariables();
 };
 
 #endif // !defined(AFX_ARGUMENT_H_7F4A21B8_C13C_11D3_BF23_124095086234__INCLUDED_)

@@ -21,13 +21,7 @@ public:
 
 private:
 
-Vec3D *m_pBox;
-    //std::vector<vertex*>      m_pAllV;
-    //std::vector<vertex>       m_AllV;
-    //std::vector<triangle*>    m_pAllT;
-    //std::vector<links*>       m_pAllLinks;
-    //std::vector<links*>       m_pHalfLinks1;
-    //std::vector<links*>       m_pHalfLinks2;
+    Vec3D *m_pBox;
     std::vector<inclusion*>   m_pInc;
     std::vector<exclusion*>   m_pExc;
 
@@ -36,12 +30,10 @@ Vec3D *m_pBox;
     std::string m_Folder ;  // Folder to write output in
     double m_AP ;
     bool m_FindnewBox;
-    double m_minRoughness;
     bool m_smooth;
     int m_monolayer;
     bool m_LessOutPut;
     void Rescaling(Vec3D zoom , MESH *pMesh);   // rescale the position and the box based on a vector
-    //void UpdateGeometry( );  // updates curvature, area etc of each triangle, vertex etc
     void UpdateGeometry(MESH *pmesh);  // updates curvature, area etc of each triangle, vertex etc
     std::string m_MosAlType;
     void BackMapOneLayer(int layer , std::string file, double);
@@ -62,6 +54,7 @@ Vec3D *m_pBox;
     void UpdateVariables(const std::vector<std::string>& Arguments);
     void UpdateBoxSize(MESH* pmesh);
 
+    bool ValidateVariable();
 private:
     std::string m_MeshFileName;
     std::string m_TaskName;

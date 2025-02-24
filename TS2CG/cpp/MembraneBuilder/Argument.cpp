@@ -170,7 +170,7 @@ Argument::Argument(std::vector <std::string> argument)
                 if (f.FileExist (m_LipidLibrary)!=true)
                 {
                     
-                    std::cout<<" Error: lipid library file, with name "<<m_LipidLibrary<<" does not exist \n";
+                    std::cout<<"---> error: lipid library file, with name "<<m_LipidLibrary<<" does not exist \n";
                     m_Health = false;
                 }
             }
@@ -194,8 +194,7 @@ Argument::Argument(std::vector <std::string> argument)
             }
             else
             {
-                std::cout << "Error: wrong command :"<<Arg1;
-                std::cout<<"\n"<<"For more information and tips execute ./PCG -h"<<"\n";
+                std::cout << "---> error processing argument:"<<Arg1<<". \n";
                 m_ArgCon=0;
                 m_Health = false;
             }
@@ -206,7 +205,7 @@ Argument::Argument(std::vector <std::string> argument)
         {
             if (f.FileExist (m_StrFileName)!=true)
             {
-                std::cout<<" Error: str file, with name . "<<m_StrFileName<<" . does not exist \n";
+                std::cout<<"---> error, str file, with name . "<<m_StrFileName<<" . does not exist \n";
                 m_Health = false;
             }
             if (f.FileExist (m_LipidLibrary)!=true)
@@ -228,8 +227,39 @@ Argument::Argument(std::vector <std::string> argument)
     {
         std::cerr << "Error: Could not open log file for writing.\n";
     }
+    
+    if(!m_Health){
+        std::cerr << "---> error: there was some errors in the commandline \n";
+        std::cout<<"\n"<<"*** For more information and tips execute ./PCG -h ***"<<"\n";
+        exit(0);
+    }
+    if(!ValidateVariables()){
+        std::cerr << "---> error: bad input data. \n";
+        std::cout<<"\n"<<"*** For more information and tips execute ./PCG -h ***"<<"\n";
+        exit(0);
+    }
  
 }
 Argument::~Argument() {
    
+}
+bool Argument::ValidateVariables(){
+    
+    if(m_BondL <= 0 ){
+        std::cerr << "---> error: bond length should be positive and larger then zero.\n";
+        return false;
+    }
+    if(m_Iter <= 0 ){
+        std::cerr << "---> error: iterations should be positive and larger then zero.\n";
+        return false;
+    }
+    if(m_RCutOff <= 0 ){
+        std::cerr << "---> error: cutoff distance should be positive and larger then zero.\n";
+        return false;
+    }
+    if(m_RCutOff <= 0 ){
+        std::cerr << "---> error: cutoff distance should be positive and larger then zero.\n";
+        return false;
+    }
+    return true;
 }
