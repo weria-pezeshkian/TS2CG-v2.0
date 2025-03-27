@@ -54,13 +54,13 @@ std::vector<point> Sphere::CalculateArea_MakePoints(int layer, double APL,double
     if(layer==1)
     {
     Curv.push_back(1.0/(m_R+H));
-    Curv.push_back(1.0/(m_R+H)*1.0/(m_R+H));
+    Curv.push_back(1.0/(m_R+H));
         TotalArea = 4*pi*(m_R+H)*(m_R+H);
     }
     else if(layer==-1)
     {
-        Curv.push_back(-1.0/(m_R-H));
-        Curv.push_back(1.0/(m_R-H)*1.0/(m_R-H));
+        Curv.push_back(1.0/(m_R-H));
+        Curv.push_back(1.0/(m_R-H));
         TotalArea = 4*pi*(m_R-H)*(m_R-H);
 
     }
@@ -94,7 +94,7 @@ std::vector<point> Sphere::CalculateArea_MakePoints(int layer, double APL,double
             Pos=BoxC+Pos+N*(DL);
             
             Vec3D P1(-N(1),N(0),0);
-            Vec3D P2=N*P1;
+            Vec3D P2 = N*P1;
             
             
             point p(beadid, APL, Pos, N, P1, P2 , Curv);

@@ -138,7 +138,7 @@ std::vector<point> SHGeneric1DPBCPointMaker::CalculateArea_MakePoints(int layer,
             
             
             curvature = 2*angle/length;
-            C0.push_back(layer*curvature);
+            C0.push_back(curvature);
             
         }
     }

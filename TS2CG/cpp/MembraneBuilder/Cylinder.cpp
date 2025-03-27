@@ -52,15 +52,13 @@ std::vector<point> Cylinder::CalculateArea_MakePoints(int layer, double APL,doub
     double TotalArea = 0;
     std::vector <double> Curv;
     
-    if(layer==1)
-    {
-    Curv.push_back(0.5/(m_R+H));
-    Curv.push_back(0);
+    if(layer == 1) {
+        Curv.push_back(1/(m_R+H));
+        Curv.push_back(0);
         TotalArea = 2*pi*(m_R+H)*m_Box(2);
     }
-    else if(layer==-1)
-    {
-        Curv.push_back(-0.5/(m_R-H));
+    else if(layer == -1) {
+        Curv.push_back(1/(m_R-H));
         Curv.push_back(0);
         TotalArea = 2*pi*(m_R-H)*m_Box(2);
 
@@ -86,21 +84,22 @@ std::vector<point> Cylinder::CalculateArea_MakePoints(int layer, double APL,doub
     {
     for (int i=0;i<N;i++)
     {
-            double T=DT*double(i)/R;
+            double T = DT*double(i)/R;
 
             double x=R*cos(T);
             double y=R*sin(T);
             double z=(double(j)+0.5*(i%2))*DTz;
             
             Vec3D Pos(x,y,z);
-            Vec3D N=Pos;
-            N(2)=0;
-            N=N*(double(layer)/N.norm());
+            Vec3D N = Pos;
+            N(2) = 0;
+            N.normalize();
+            N = N*double(layer);
             Vec3D BoxC(m_Box(0)/2, m_Box(1)/2, 0 );
-            Pos=BoxC+Pos+N*(DL);
+            Pos = BoxC + Pos + N*(DL);
             
             Vec3D P2(0,0,1);
-            Vec3D P1=N*P2;
+            Vec3D P1 = N*P2;
          //   std::cout<<P1(0)<<"  "<<P1(1)<<"  "<<P1(2)<<"   "<<P1.norm()<<"  \n";
           //  std::cout<<N(0)<<"  "<<N(1)<<"  "<<N(2)<<"   "<<N.dot(P2,N)<<"  \n";
 

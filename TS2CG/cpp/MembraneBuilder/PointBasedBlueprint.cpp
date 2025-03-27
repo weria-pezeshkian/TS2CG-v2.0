@@ -324,6 +324,7 @@ void PointBasedBlueprint::WritePointFile(int layer, std::string filename, std::v
         double Cur1 = (Cur.size() > 0) ? Cur[0] : 0.0;
         double Cur2 = (Cur.size() > 1) ? Cur[1] : 0.0;
 
+        
         // Print to file
         fprintf(BMFile, "%10d%5d%10.3f%10.3f%10.3f%10.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f%8.3f\n",
                 id, domain, area, pos(0), pos(1), pos(2),

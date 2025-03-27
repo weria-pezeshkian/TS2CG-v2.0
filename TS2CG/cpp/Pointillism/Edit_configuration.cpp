@@ -586,10 +586,11 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
         if(layer==-1)
         fprintf(BMFile2,  "%s\n",lay);
     }
-    int i=0;
-    double dr=1;
-    if (m_monolayer==-1)
-    dr=-1;
+    int i = 0;
+    double dr = 1;
+    if (m_monolayer==-1){
+        dr = -1;
+    }
    for (std::vector<vertex *>::iterator it = (pMesh->m_pActiveV).begin() ; it != (pMesh->m_pActiveV).end(); ++it)
     {
         double area=(*it)->GetArea();
@@ -597,10 +598,10 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
         normal = normal*(layer)*(dr);
         //    inclusion* inc = (*it)->GetInclusion();
         Tensor2  L2G = (*it)->GetL2GTransferMatrix();
-        Vec3D LD1(1,0,0);
-        Vec3D GD1 = L2G*LD1;
-        Vec3D LD2(0,1,0);
-        Vec3D GD2 = L2G*LD2;
+        Vec3D LD1(layer,0,0);
+        Vec3D GD1 = L2G * LD1;
+        Vec3D LD2(0,layer,0);
+        Vec3D GD2 = L2G * LD2;
         double x=(*it)->GetVXPos();
         double y=(*it)->GetVYPos();
         double z=(*it)->GetVZPos();
