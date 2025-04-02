@@ -124,7 +124,7 @@ def calculate_curvature_weights(local_curvature: float, lipids: Sequence[LipidSp
     return weights
 
 def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "both",
-                  k_factor: float = 1.0) -> None:
+                  k_factor: float = 1.0,area:bool=False) -> None:
     """Assign lipids to domains based on curvature preferences"""
     layers = [membrane.outer]
 
@@ -207,6 +207,7 @@ def DOP(args: List[str]) -> None:
     parser.add_argument('-oi', '--old-input', type=Path,
                        help='Path to existing input.str to preserve additional sections')
     parser.add_argument('--seed', type=int, help='Random seed for reproducibility')
+    parser.add_argument('--area',default=False,action='store_true',help="Considers the area of each point for weight calculation")
 
     args = parser.parse_args(args)
     logging.basicConfig(level=logging.INFO)
@@ -219,7 +220,7 @@ def DOP(args: List[str]) -> None:
         membrane = Point(args.point_dir)
         lipids = parse_lipid_file(args.input)
 
-        assign_domains(membrane, lipids, args.leaflet, args.k_factor)
+        assign_domains(membrane, lipids, args.leaflet, args.k_factor,args.area)
 
         write_input_str(lipids, args.new_input, args.old_input)
         logger.info(f"Created input file: {args.new_input}")
