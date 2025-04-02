@@ -169,8 +169,10 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
                 valid_lipids = list(range(len(lipids)))
 
             valid_specs = [lipids[i] for i in valid_lipids]
-            weights = calculate_curvature_weights(local_curv, valid_specs, k_factor,permuted_areas[c])
-
+            if area:
+                weights = calculate_curvature_weights(local_curv, valid_specs, k_factor,permuted_areas[c])
+            else:
+                weights = calculate_curvature_weights(local_curv, valid_specs, k_factor)
             # Choose lipid type and update bookkeeping
             chosen_idx = rng.choice(valid_lipids, p=weights)
             new_domains[idx] = lipids[chosen_idx].domain_id
