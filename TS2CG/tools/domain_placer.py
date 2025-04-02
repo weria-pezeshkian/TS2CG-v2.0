@@ -110,13 +110,13 @@ def write_input_str(lipids: Sequence[LipidSpec], output_file: Path, old_input: O
         f.write('\n'.join(sections))
 
 def calculate_curvature_weights(local_curvature: float, lipids: Sequence[LipidSpec],
-                              k_factor: float, max_delta: float = 5.0) -> np.ndarray:
+                              k_factor: float, area:float=1.0, max_delta: float = 5.0) -> np.ndarray:
     """Calculate Boltzmann weights for each lipid type at given curvature"""
     # Calculate curvature differences
     delta_curvatures = np.array([abs(2 * local_curvature - lipid.curvature) for lipid in lipids])
 
     # Calculate log weights using the log-sum-exp trick for numerical stability
-    log_weights = -k_factor * delta_curvatures**2
+    log_weights = -k_factor * (delta_curvatures**2)*area
     max_log_weight = np.max(log_weights)
     exp_weights = np.exp(log_weights - max_log_weight)
     weights = exp_weights / np.sum(exp_weights)
@@ -154,7 +154,10 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
         available_lipids = set(range(len(lipids)))
 
         # Randomly process points
-        for idx in rng.permuted(membrane_layer.ids):
+        perm=rng.permuted(range(len(membrane_layer.ids)))
+        permuted_ids=membrane_layer.ids[perm]
+        permuted_areas=membrane_layer.area[perm]
+        for c,idx in enumerate(permuted_ids):
             local_curv = curvatures[idx]
 
             # Calculate weights only for available lipid types
@@ -166,7 +169,7 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
                 valid_lipids = list(range(len(lipids)))
 
             valid_specs = [lipids[i] for i in valid_lipids]
-            weights = calculate_curvature_weights(local_curv, valid_specs, k_factor)
+            weights = calculate_curvature_weights(local_curv, valid_specs, k_factor,permuted_areas[c])
 
             # Choose lipid type and update bookkeeping
             chosen_idx = rng.choice(valid_lipids, p=weights)
