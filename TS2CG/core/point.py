@@ -186,7 +186,10 @@ class Point:
         data[12:15] = membrane.principal_vectors['p2'].T
         data[15] = membrane.curvature['c1']
         data[16] = membrane.curvature['c2']
-        data[17] = membrane.edges.astype(int)
+        try:
+            data[17] = membrane.edges.astype(int)
+        except AttributeError:
+            pass
 
         # Create header
         headers = []
