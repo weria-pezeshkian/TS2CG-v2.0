@@ -27,7 +27,10 @@ class Membrane:
             'c1': data[15],        # First principal curvature
             'c2': data[16]         # Second principal curvature
         }
-        self.edges = data[17].astype(bool) # Boolean array if point is edge
+        try:
+            self.edges = data[17].astype(bool) # Boolean array if point is edge
+        except IndexError:
+            self.edges = None
 
     @property
     def mean_curvature(self) -> np.ndarray:
