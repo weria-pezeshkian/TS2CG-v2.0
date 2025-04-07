@@ -15,7 +15,7 @@ help::help(std::string version, std::string exe)
         std::cout << "-- Groningen Biomolecular Sciences and Biotechnology Institute and Zernike Institute for Advanced Materials,\n-- University of Groningen, Groningen, Netherlands\n";
         std::cout << "-- For more information contact Weria Pezeshkian: w.pezeshkian@rug.nl and weria.pezeshkian@gmail.com\n";
         std::cout << "-- citation: Pezeshkian, W., König, M., Wassenaar, T.A. et al. Backmapping triangulated surfaces to coarse-grained membrane models. Nat Commun 11, 2296 (2020).\n";
-        std::cout << "-- citation: F. Schuhmann, J. A. Stevens, N. Rahmani, I. Lindahl, C. M. Brown, C. Brasnett, D. Anastasiou, A. Bravo Vidal, B. Geiger, S. J. Marrink and W. Pezeshkian. TS2CG as a membrane builder. (2020).\n\n";
+        std::cout << "-- citation: F. Schuhmann, J. A. Stevens, N. Rahmani, I. Lindahl, C. M. Brown, C. Brasnett, D. Anastasiou, A. Bravo Vidal, B. Geiger, S. J. Marrink and W. Pezeshkian. TS2CG as a membrane builder. (2025).\n\n";
         std::cout << "==========================================================================================================\n\n";
         std::cout << "-- Pointillism (PLM), reads a triangulated surface input file e.g., typical outputs of dynamically \n-- triangulated surfaces simulations, and generates two sets of points that represent two smooth surfaces \n-- (upper and lower monolayers of a bilayer).\n";
         std::cout << "-- Simplest triangulated surfaces file that can be read by this script should be as: \n\n";
@@ -36,7 +36,7 @@ help::help(std::string version, std::string exe)
         std::cout << "-- option -smooth allows you to handle highly rough surfaces; However, try to avoid this option, since it has not been tested well yet.\n";
         std::cout << "-- option -monolayer allows you to generate a monolayer instead of a bilayer. It should be either 1 or -1, which can invert the shape of the monolayer.\n\n";
         std::cout << "==========================================================================================================\n\n";
-        std::cout << "-- Pointillism: generating double layer points from a closed triangulated surface\n\n";
+        std::cout << "-- Pointillism: generating double layer points from a triangulated surface\n\n";
         std::cout << "==========================================================================================================\n\n";
         std::cout << "-------------------------------------------------------------------------------\n";
         std::cout << std::left << std::setw(20) << "  option"
