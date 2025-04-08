@@ -18,7 +18,6 @@ def make_fullscreen():
     """Make the Matplotlib figure full screen universally across platforms."""
     backend = matplotlib.get_backend()
     manager = plt.get_current_fig_manager()
-
     if backend == 'TkAgg':
         # For TkAgg backend (Linux, Windows, or macOS with Tkinter)
         manager.window.state('zoomed')  # Maximize window
