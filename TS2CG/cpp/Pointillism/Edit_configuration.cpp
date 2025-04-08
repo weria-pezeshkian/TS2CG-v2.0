@@ -27,7 +27,7 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments) :
                     m_FindnewBox(false),          // Flag to find the smallest possible box
                     m_MosAlType("Type1"),          // Default algorithm type
                     m_BilayerThickness(3.8),       // Default bilayer thickness
-                    m_Iteration(-1),               // Default degree of meshing (disabled)
+                    m_Iteration(1),               // Default degree of meshing (disabled)
                     m_MeshFileName("TS.q"),        // Default mesh file name
                     m_AP(0.62)                    // Default area per lipid
 {

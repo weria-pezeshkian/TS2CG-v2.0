@@ -39,12 +39,12 @@ def run_cpp_module(module_name, args):
         'SOL': SOL()
     }
 
-    #if module_name == "PLM":
-    #    try:
-    #        from TS2CG.core.mesh_converter import adjust_mesh_file
-    #        args=adjust_mesh_file(args)
-    #    except ValueError:
-    #        pass
+    if module_name == "PLM":
+        try:
+            from TS2CG.core.mesh_converter import adjust_mesh_file
+            args=adjust_mesh_file(args)
+        except ValueError:
+            pass
  
     try:
         module = cpp_modules[module_name]
