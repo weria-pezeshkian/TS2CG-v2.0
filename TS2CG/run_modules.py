@@ -2,7 +2,7 @@ import argparse
 import subprocess
 from pathlib import Path
 from importlib.metadata import version
-
+import sys
 from TS2CG.tools.domain_placer import DOP
 from TS2CG.tools.circular_domains import DAI
 from TS2CG.tools.inclusion_updater import INU
@@ -11,10 +11,8 @@ from .cpp import PCG, PLM, SOL
 
 
 from typing import List, Union, Optional
-import logging
 import os
 
-logger = logging.getLogger(__name__)
 
 def run_python_module(module_name, args):
     """
@@ -45,15 +43,14 @@ def run_cpp_module(module_name, args):
             args=adjust_mesh_file(args)
         except ValueError:
             pass
- 
     try:
         module = cpp_modules[module_name]
         module(*args)
     except KeyError:
-        logger.error(f"Unknown CPP module: {module_name}")
+        #logger.error(f"Unknown CPP module: {module_name}")
         raise ValueError(f"Unknown CPP module: {module_name}")
     except Exception as e:
-        logger.error(f"Failed to run {module_name}: {e}")
+        #logger.error(f"Failed to run {module_name}: {e}")
         raise
 
 def main():

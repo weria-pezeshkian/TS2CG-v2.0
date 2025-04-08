@@ -146,12 +146,12 @@ bool Nfunction::CopyBinaryFile(const std::string& inputFilename, const std::stri
     std::ofstream outFile(outputFilename, std::ios::binary);
 
     if (!inFile.is_open()) {
-        std::cerr << "Error: Unable to open input file: " << inputFilename << std::endl;
+        std::cout << "Error: Unable to open input file: " << inputFilename << std::endl;
         return false;
     }
 
     if (!outFile.is_open()) {
-        std::cerr << "Error: Unable to open output file: " << outputFilename << std::endl;
+        std::cout << "Error: Unable to open output file: " << outputFilename << std::endl;
         return false;
     }
     char buffer[bufferSize];
@@ -169,12 +169,12 @@ bool Nfunction::CopyBinaryFile(const std::string& inputFilename, const std::stri
         }
 
         if (!inFile) {
-            std::cerr << "Error: Failed to read from input file: " << inputFilename << std::endl;
+            std::cout << "Error: Failed to read from input file: " << inputFilename << std::endl;
             return false;
         }
 
         if (!outFile) {
-            std::cerr << "Error: Failed to write to output file: " << outputFilename << std::endl;
+            std::cout << "Error: Failed to write to output file: " << outputFilename << std::endl;
             return false;
         }
     }

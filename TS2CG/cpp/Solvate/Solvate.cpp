@@ -123,9 +123,9 @@ std::vector<bead> Solvate::AddIons(std::vector<bead>& FullWaterBead, int Nposion
     const int numer_of_total_ions = Nposion + Nnegion;
 
     if (numer_of_total_ions > numer_of_water) {
-        std::cerr << "---> error: total number of requested ions is larger than the total generated water beads\n";
-        std::cerr << "   ---> total requested ions " << numer_of_total_ions << "\n";
-        std::cerr << "   ---> total requested water beads " << numer_of_water << "\n";
+        std::cout << "---> error: total number of requested ions is larger than the total generated water beads\n";
+        std::cout << "   ---> total requested ions " << numer_of_total_ions << "\n";
+        std::cout << "   ---> total requested water beads " << numer_of_water << "\n";
         exit(0);
     }
 

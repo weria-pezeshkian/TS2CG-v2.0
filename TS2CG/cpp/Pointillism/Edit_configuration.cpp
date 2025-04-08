@@ -36,7 +36,7 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments) :
     // updates variables based on the command line arguments
     UpdateVariables(Arguments);
     if(!ValidateVariable()){
-        std::cerr << "---> error: bad inputs.\n";
+        std::cout << "---> error: bad inputs.\n";
         exit(0);
     }
     
@@ -238,7 +238,7 @@ void Edit_configuration::UpdateVariables(const std::vector<std::string>& Argumen
     // Open log file
     std::ofstream log("plm.log");
     if (!log.is_open()) {
-        std::cerr << "---> error: Could not open log file.\n";
+        std::cout << "---> error: Could not open log file.\n";
         return;
     }
 
@@ -321,30 +321,30 @@ bool Edit_configuration::ValidateVariable(){
     
     
     if (m_Iteration < 1 ) {
-        std::cerr << "---> error: Iteration must be larger then 0.\n";
+        std::cout << "---> error: Iteration must be larger then 0.\n";
         return false;
     }
     if (m_Zoom(0) <= 0 || m_Zoom(1) <= 0 || m_Zoom(2) <= 0 ) {
-        std::cerr << "---> error: rescaling should be larger than zero \n";
+        std::cout << "---> error: rescaling should be larger than zero \n";
         return false;
     }
     if (!(m_monolayer == 0 || m_monolayer == 1 || m_monolayer == -1)) {
-        std::cerr << "---> error: monolayer should be either 0, or 1, it is set to = "<<m_monolayer<<" \n";
+        std::cout << "---> error: monolayer should be either 0, or 1, it is set to = "<<m_monolayer<<" \n";
         return false;
     }
     if (m_AP <= 0 ) {
-        std::cerr << "---> error: area per molecules should be larger then zero. \n";
+        std::cout << "---> error: area per molecules should be larger then zero. \n";
         return false;
     }
     if (m_BilayerThickness < 0 ) {
-        std::cerr << "---> error: bilayer thickness should be positive. \n";
+        std::cout << "---> error: bilayer thickness should be positive. \n";
         return false;
     }
     else if(m_BilayerThickness == 0){
-        std::cerr << "---> warnning: bilayer thickness is set to zero. \n";
+        std::cout << "---> warnning: bilayer thickness is set to zero. \n";
     }
     else if(m_BilayerThickness > 8){
-        std::cerr << "---> warnning: bilayer thickness is unrealistic. Do you know what are you doing? \n";
+        std::cout << "---> warnning: bilayer thickness is unrealistic. Do you know what are you doing? \n";
     }
     
 

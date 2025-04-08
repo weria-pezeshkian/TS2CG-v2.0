@@ -132,7 +132,7 @@ void GroFile::WriteGroFile(std::string file) {
     fgro = fopen(file.c_str(), "w");
 
     if (!fgro) {
-        std::cerr << "Error opening file: " << file << std::endl;
+        std::cout << "Error opening file: " << file << std::endl;
         return;
     }
 

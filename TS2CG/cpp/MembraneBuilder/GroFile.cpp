@@ -32,7 +32,7 @@ void GroFile::ReadGroFile(std::string file) {
     
     std::ifstream FGRO(file.c_str());
     if (!FGRO.is_open()) {
-        std::cerr << "---> Error: Could not open the file: " << file << std::endl;
+        std::cout << "---> Error: Could not open the file: " << file << std::endl;
         exit(0);  // Return on error instead of throwing an exception
     }
     getline (FGRO,m_Title);

@@ -225,16 +225,16 @@ Argument::Argument(std::vector <std::string> argument)
     }
     else
     {
-        std::cerr << "Error: Could not open log file for writing.\n";
+        std::cout << "Error: Could not open log file for writing.\n";
     }
     
     if(!m_Health){
-        std::cerr << "---> error: there was some errors in the commandline \n";
+        std::cout << "---> error: there was some errors in the commandline \n";
         std::cout<<"\n"<<"*** For more information and tips execute ./PCG -h ***"<<"\n";
         exit(0);
     }
     if(!ValidateVariables()){
-        std::cerr << "---> error: bad input data. \n";
+        std::cout << "---> error: bad input data. \n";
         std::cout<<"\n"<<"*** For more information and tips execute ./PCG -h ***"<<"\n";
         exit(0);
     }
@@ -246,19 +246,19 @@ Argument::~Argument() {
 bool Argument::ValidateVariables(){
     
     if(m_BondL <= 0 ){
-        std::cerr << "---> error: bond length should be positive and larger then zero.\n";
+        std::cout << "---> error: bond length should be positive and larger then zero.\n";
         return false;
     }
     if(m_Iter <= 0 ){
-        std::cerr << "---> error: iterations should be positive and larger then zero.\n";
+        std::cout << "---> error: iterations should be positive and larger then zero.\n";
         return false;
     }
     if(m_RCutOff <= 0 ){
-        std::cerr << "---> error: cutoff distance should be positive and larger then zero.\n";
+        std::cout << "---> error: cutoff distance should be positive and larger then zero.\n";
         return false;
     }
     if(m_RCutOff <= 0 ){
-        std::cerr << "---> error: cutoff distance should be positive and larger then zero.\n";
+        std::cout << "---> error: cutoff distance should be positive and larger then zero.\n";
         return false;
     }
     return true;
