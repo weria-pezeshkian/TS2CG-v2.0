@@ -42,7 +42,6 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments) :
     
     
     m_pCurvatureCalculations = &m_CurvatureCalculations;
-    std::cout << "-- edit conf 49 \n";
 //// do the jobs
   if(m_TaskName == "in_out")
   {
