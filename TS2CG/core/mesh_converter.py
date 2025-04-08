@@ -56,9 +56,10 @@ def adjust_mesh_file(args):
         convert_vtk(reader,file)
         args[args.index("-TSfile")+1]=file+".tsi"
     elif file_extension== ".blend":
-        script=files("TS2CG.core").joinpath("blender_script.py").read_text()
+        script=files("TS2CG.core").joinpath("blender_script.py")
         command=["blender","--background",file,"--python",script]
         subprocess.run(command,check=True)
         os.rename("F9bK3qZ2L7xJ1D0wH8sV4P5aR.tsi",f"{file}.tsi")
+        args[args.index("-TSfile")+1]=file+".tsi"
 
     return args
