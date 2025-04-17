@@ -9,10 +9,7 @@ to take electron microscopy tomography data and build structures for molecular d
 
 ## State
 
-**NOTE**: this version is under development and might be associated with errors and bugs.
-Please use the previous version if you are not in direct contact with the developers.
-Previous version can be found
-[here](https://github.com/marrink-lab/TS2CG1.1).
+**NOTE**: Version 2 is finalized 
 
 ## Installation
 
