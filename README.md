@@ -10,6 +10,11 @@ to take electron microscopy tomography data and build structures for molecular d
 ## State
 
 **NOTE**: Version 2 is finalized 
+## Quick references
+[About TS2CG](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/About-TS2CG) \
+[New Updates](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Updates-of-this-version)\
+[Tutorials for version 2.0](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Tutorial)\
+[Tutorials 1.1](https://cgmartini.nl/docs/tutorials/Martini3/TS2CG/)
 
 ## Installation
 
@@ -483,10 +488,5 @@ The line of a comment on a topology file should start with with a semicolon ";" 
 You can find a Martini3.LIB file with the most common lipids on the files of the tutorials ([.LIB file](https://github.com/weria-pezeshkian/TS2CG-v2.0/blob/master/Tutorials/tut1/files/Martini3.LIB)).
 
 
-## dat files
 
-## Quick references
-[About TS2CG](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/About-TS2CG) \
-[New Updates](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Updates-of-this-version)\
-[Tutorials for version 2.0](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Tutorial)\
-[Tutorials 1.1](https://cgmartini.nl/docs/tutorials/Martini3/TS2CG/)
+
