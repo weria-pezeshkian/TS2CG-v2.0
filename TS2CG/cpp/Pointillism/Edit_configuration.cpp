@@ -670,7 +670,7 @@ if(layer==1)
    }
     //==== We write Exclusion data
     
-    if((pMesh->m_pInclusion).size()!=0)
+    if((pMesh->m_pExclusion).size()!=0)
     {
     FILE *ExcFile;
     ExcFile = fopen((m_Folder+"/ExcData.dat").c_str(), "w");
