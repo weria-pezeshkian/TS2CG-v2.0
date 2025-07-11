@@ -7,6 +7,7 @@ from TS2CG.tools.domain_placer import DOP
 from TS2CG.tools.circular_domains import DAI
 from TS2CG.tools.inclusion_updater import INU
 from TS2CG.tools.dir_visualizer import VIS
+from TS2CG.tools.libmaker import library_file_preparer
 from .cpp import PCG, PLM, SOL
 
 
@@ -26,6 +27,8 @@ def run_python_module(module_name, args):
         INU(args)
     elif module_name == 'VIS':
         VIS(args)
+    elif module_name == 'libmaker':
+        library_file_preparer(args)
     else:
         print(f"Unknown Python module: {module_name}")
 
@@ -63,7 +66,7 @@ def main():
     cpp_modules = ['SOL', 'PLM', 'PCG']
 
     # define the python based modules
-    python_modules = ['DOP', 'DAI', 'INU','VIS']
+    python_modules = ['DOP', 'DAI', 'INU','VIS','libmaker']
 
     # parse arguments before a calling module
     parser = argparse.ArgumentParser(
