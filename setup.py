@@ -51,7 +51,7 @@ setup(
     },
     include_package_data=True,
     python_requires='>=3.6',
-    install_requires=['numpy','scipy','networkx','matplotlib','vtk','MDAnalysis'],
+    install_requires=[],
     entry_points={
         'console_scripts': [
             'TS2CG=TS2CG.run_modules:main',
