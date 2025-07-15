@@ -13,7 +13,7 @@ authors = [
     {name = "Jan Stevens", email = "j.a.stevens@rug.nl"},
 ]
 license = {file = "LICENSE"}
-dependencies = ["numpy", "networkx", "scipy","matplotlib", "MDAnalysis"]
+dependencies = ["numpy", "networkx", "scipy","matplotlib", "MDAnalysis", "vtk"]
 
 [tool.setuptools]
 packages = ["TS2CG"]
