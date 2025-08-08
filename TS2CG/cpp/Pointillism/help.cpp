@@ -80,6 +80,11 @@ help::help(std::string version, std::string exe)
                   << std::setw(15) << "------"
                   << std::setw(20) << "no"
                   << "find a better box for the system\n";
+        
+        std::cout << std::left << std::setw(20) << Def_resizeboxdist
+                  << std::setw(15) << "double"
+                  << std::setw(20) << "4"
+                  << "if you resize the box, the distance from the box edge \n";
 
         std::cout << std::left << std::setw(20) << Def_TSfile
                   << std::setw(15) << "string"

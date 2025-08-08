@@ -52,7 +52,7 @@ private:
     void InitializeVariables();
     // updates variables based on the command line arguments
     void UpdateVariables(const std::vector<std::string>& Arguments);
-    void UpdateBoxSize(MESH* pmesh);
+    void UpdateBoxSize(MESH* pmesh, double edge_distance);
 
     bool ValidateVariable();
 private:
@@ -62,6 +62,7 @@ private:
     Curvature * m_pCurvatureCalculations;
     bool m_Health;
     double m_BilayerThickness;
+    double m_BoxDist;
     MESH          m_Mesh;
     MESH          *m_pMesh;
 

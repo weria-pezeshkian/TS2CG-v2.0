@@ -29,7 +29,8 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments) :
                     m_BilayerThickness(3.8),       // Default bilayer thickness
                     m_Iteration(1),               // Default degree of meshing (disabled)
                     m_MeshFileName("TS.q"),        // Default mesh file name
-                    m_AP(0.62)                    // Default area per lipid
+                    m_AP(0.62),                    // Default area per lipid
+                    m_BoxDist(4)
 {
     // Initialize the Variables to their default values
     InitializeVariables();
@@ -277,7 +278,9 @@ void Edit_configuration::UpdateVariables(const std::vector<std::string>& Argumen
             } else if (Arguments[i] == Def_resizebox) {
                 m_FindnewBox = true;
                 --i;  // No additional argument for this flag
-            } else if (Arguments[i] == Def_Monolayer) {
+            } else if (Arguments[i] == Def_resizeboxdist) {
+                m_BoxDist = f.String_to_Double(Arguments[i + 1]);
+            }else if (Arguments[i] == Def_Monolayer) {
                 m_monolayer = f.String_to_Int(Arguments[i + 1]);
                 m_BilayerThickness = 0;
             } else if (Arguments[i] == Def_PrintLessPutput) {
@@ -403,45 +406,82 @@ double  Edit_configuration::PPBCM_Cluster(double Lx, std::vector <double> X)
     return cm;
     
 }
-void Edit_configuration::UpdateBoxSize(MESH* pmesh)
+void Edit_configuration::UpdateBoxSize(MESH* pmesh, double edge_distance)
 {
-    // Finding the center of geometry
-    Vec3D CM(0,0,0);
-    int totalvNo = (pmesh->m_pActiveV).size();
-    for (std::vector<vertex *>::iterator it1 = (pmesh->m_pActiveV).begin() ; it1 != (pmesh->m_pActiveV).end(); ++it1)
-    {
-        Vec3D X ((*it1)->GetVXPos(),(*it1)->GetVYPos(),(*it1)->GetVZPos());
-        CM = CM+X*(1.0/double(totalvNo));
-    }
-    // Finding the max distance from the CMG
-    Vec3D MaxB(0,0,0);
-    for (std::vector<vertex *>::iterator it = (pmesh->m_pActiveV).begin() ; it != (pmesh->m_pActiveV).end(); ++it)
-    {
+    /**
+     * Created August 2025
+     * @brief Updates the simulation box size and repositions mesh vertices accordingly.
+     *
+     * This function recalculates the bounding box (m_pBox) for the given mesh based on the
+     * current positions of all active vertices. It performs the following operations:
+     *
+     * 1. Computes the center of mass (geometric center) of the active vertices.
+     * 2. Determines the maximum distance from the center along each axis (X, Y, Z).
+     * 3. Adds padding to each axis based on half the bilayer thickness and the specified edge distance.
+     * 4. Sets the simulation box size to twice the padded maximum distance (to ensure all vertices fit).
+     * 5. Shifts all vertex positions so that the center of mass is aligned with the center of the new box.
+     *
+     * @param pmesh Pointer to the mesh object containing active vertices.
+     * @param edge_distance Additional buffer to be added on each side of the box.
+     *
+     * @note The function modifies both the box size and the positions of the mesh vertices.
+     */
+    // Get reference to active vertices
+    std::vector<vertex*>& vertices = pmesh->m_pActiveV;
+    int totalVertices = vertices.size();
+    if (totalVertices == 0) return;
 
-            double dx = (*it)->GetVXPos()-CM(0);
-            double dy = (*it)->GetVYPos()-CM(1);
-            double dz = (*it)->GetVZPos()-CM(2);
-        
-            if(MaxB(0)<fabs(dx))
-                MaxB(0)=fabs(dx);
-            if(MaxB(1)<fabs(dy))
-                MaxB(1)=fabs(dy);
-            if(MaxB(2)<fabs(dz))
-                MaxB(2)=fabs(dz);
+    // Step 1: Compute Center of Mass
+    Vec3D centerOfMass(0.0, 0.0, 0.0);
+    double invTotal = 1.0 / double(totalVertices);
 
-    }
-    double H = m_BilayerThickness/2;
-    Vec3D DB ((6+H)/m_Zoom(0),(6+H)/m_Zoom(1),(6+H)/m_Zoom(2));
-    (*m_pBox) = MaxB*2+DB;
-    for (std::vector<vertex *>::iterator it1 = (pmesh->m_pActiveV).begin() ; it1 != (pmesh->m_pActiveV).end(); ++it1)
+    for (std::vector<vertex*>::iterator it = vertices.begin(); it != vertices.end(); ++it)
     {
-        Vec3D X ((*it1)->GetVXPos(),(*it1)->GetVYPos(),(*it1)->GetVZPos());
-        (*it1)->UpdateVXPos((*it1)->GetVXPos()-CM(0)+((*m_pBox)(0))*0.5);
-        (*it1)->UpdateVYPos((*it1)->GetVYPos()-CM(1)+((*m_pBox)(1))*0.5);
-        (*it1)->UpdateVZPos((*it1)->GetVZPos()-CM(2)+((*m_pBox)(2))*0.5);
-
+        vertex* v = *it;
+        Vec3D pos(v->GetVXPos(), v->GetVYPos(), v->GetVZPos());
+        centerOfMass = centerOfMass + pos * invTotal;
     }
-    
+
+    // Step 2: Compute Max Distance from Center
+    Vec3D maxDistance(0.0, 0.0, 0.0);
+
+    for (std::vector<vertex*>::iterator it = vertices.begin(); it != vertices.end(); ++it)
+    {
+        vertex* v = *it;
+        double dx = v->GetVXPos() - centerOfMass(0);
+        double dy = v->GetVYPos() - centerOfMass(1);
+        double dz = v->GetVZPos() - centerOfMass(2);
+
+        if (maxDistance(0) < fabs(dx)) maxDistance(0) = fabs(dx);
+        if (maxDistance(1) < fabs(dy)) maxDistance(1) = fabs(dy);
+        if (maxDistance(2) < fabs(dz)) maxDistance(2) = fabs(dz);
+    }
+
+    // Step 3: Add half bilayer thickness and edge buffer
+    double halfThickness = m_BilayerThickness * 0.5;
+
+    maxDistance(0) += halfThickness + edge_distance;
+    maxDistance(1) += halfThickness + edge_distance;
+    maxDistance(2) += halfThickness + edge_distance;
+
+    // Step 4: Update box size
+    (*m_pBox) = maxDistance * 2.0;
+
+    // Step 5: Shift vertices so center of mass becomes center of box
+    Vec3D boxCenter = (*m_pBox) * 0.5;
+
+    for (std::vector<vertex*>::iterator it = vertices.begin(); it != vertices.end(); ++it)
+    {
+        vertex* v = *it;
+
+        double newX = v->GetVXPos() - centerOfMass(0) + boxCenter(0);
+        double newY = v->GetVYPos() - centerOfMass(1) + boxCenter(1);
+        double newZ = v->GetVZPos() - centerOfMass(2) + boxCenter(2);
+
+        v->UpdateVXPos(newX);
+        v->UpdateVYPos(newY);
+        v->UpdateVZPos(newZ);
+    }
 }
 //=== the backmapping function
 //==================================
@@ -461,7 +501,7 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
     UpdateGeometry(pMesh);
     
     if(m_FindnewBox==true)
-        UpdateBoxSize(pMesh);
+        UpdateBoxSize(pMesh, m_BoxDist);
     
     // this means that we need to find the optiomal iteration value
     double totalvNo = double((pMesh->m_pActiveV).size());

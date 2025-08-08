@@ -24,6 +24,7 @@
 #define Def_OutputFolderName        "-o"
 #define Def_SmoothingFlag        "-smooth"
 #define Def_resizebox           "-resizebox"
+#define Def_resizeboxdist           "-b_dist"
 #define Def_Monolayer           "-monolayer"
 #define Def_PrintLessPutput           "-less"
 
