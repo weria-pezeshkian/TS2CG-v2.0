@@ -11,7 +11,9 @@ to take electron microscopy tomography data and build structures for molecular d
 
 **NOTE**: Version 2 is finalized
 
-CITE: https://www.biorxiv.org/content/10.1101/2025.04.16.649160v1
+CITE:
+https://www.biorxiv.org/content/10.1101/2025.04.16.649160v1 \
+https://www.nature.com/articles/s41467-020-16094-y
 ## Quick references
 [About TS2CG](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/About-TS2CG) \
 [New Updates](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Updates-of-this-version)\
