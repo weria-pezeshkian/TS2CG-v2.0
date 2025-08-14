@@ -12,8 +12,30 @@ to take electron microscopy tomography data and build structures for molecular d
 **NOTE**: Version 2 is finalized
 
 CITE:
-https://www.biorxiv.org/content/10.1101/2025.04.16.649160v1 \
-https://www.nature.com/articles/s41467-020-16094-y
+```bibtex
+@article{Pezeshkian2020Backmapping,
+  title = {Backmapping triangulated surfaces to coarse-grained membrane models},
+  author = {Pezeshkian, Weria and K{\"o}nig, Melanie and Wassenaar, Tsjerk A. and Marrink, Siewert J.},
+  journal = {Nature Communications},
+  year = {2020},
+  volume = {11},
+  number = {1},
+  pages = {2296},
+  doi = {10.1038/s41467-020-16160-6},
+  url = {https://doi.org/10.1038/s41467-020-16160-6}
+}
+@article {Schuhmann2025.04.16.649160,
+	author = {Schuhmann, Fabian and Stevens, Jan A. and Rahmani, Neda and Lindahl, Isabell and Brown, Chelsea M. and Brasnett, Christopher and Anastasiou, Dimitrios and Bravo Vidal, Adri{\`a} and Geiger, Beatrice and Marrink, Siewert J. and Pezeshkian, Weria},
+	title = {TS2CG as a membrane builder},
+	elocation-id = {2025.04.16.649160},
+	year = {2025},
+	doi = {10.1101/2025.04.16.649160},
+	URL = {https://www.biorxiv.org/content/early/2025/07/22/2025.04.16.649160},
+	journal = {bioRxiv}
+}
+
+```
+
 ## Quick references
 [About TS2CG](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/About-TS2CG) \
 [New Updates](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Updates-of-this-version)\
