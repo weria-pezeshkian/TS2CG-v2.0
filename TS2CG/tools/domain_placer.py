@@ -1,11 +1,5 @@
 """
-CLI tool to place lipids in membrane domains based on local curvature preferences.
-Uses domain_input.txt format for lipid specifications and generates input.str for next steps.
-
-Example domain_input.txt:
-; domain lipid percentage c0 density
-0 POPC .5 0.179 0.64
-2 POPG .5 0.629 0.64
+Tool to place lipids in membrane domains based on local curvature preferences.
 """
 
 import argparse
@@ -13,8 +7,7 @@ from pathlib import Path
 import numpy as np
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Dict
-from scipy.special import logsumexp
+from typing import List, Optional, Sequence
 
 from ..core.point import Point
 
@@ -110,40 +103,45 @@ def write_input_str(lipids: Sequence[LipidSpec], output_file: Path, old_input: O
         f.write('\n'.join(sections))
 
 def calculate_curvature_weights(local_curvature: float, lipids: Sequence[LipidSpec],
-                              k_factor: float, area:float=1.0, max_delta: float = 5.0) -> np.ndarray:
+                              k_factor: float, area: float = 1.0) -> np.ndarray:
     """Calculate Boltzmann weights for each lipid type at given curvature"""
     # Calculate curvature differences
     delta_curvatures = np.array([abs(2 * local_curvature - lipid.curvature) for lipid in lipids])
 
     # Calculate log weights using the log-sum-exp trick for numerical stability
-    log_weights = -k_factor * (delta_curvatures**2)*area
+    log_weights = -k_factor * (delta_curvatures**2) * area
     max_log_weight = np.max(log_weights)
     exp_weights = np.exp(log_weights - max_log_weight)
     weights = exp_weights / np.sum(exp_weights)
 
     return weights
 
-def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "both",
-                  k_factor: float = 1.0,area:bool=False) -> None:
+def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], leaflet: str = "both",
+                  k_factor: float = 1.0, area_weighted: bool = False, seed: Optional[int] = None) -> None:
     """Assign lipids to domains based on curvature preferences"""
-    layers = [membrane.outer]
 
-    if membrane.monolayer or layer.lower() == "outer":
-        layers = [membrane.outer]
-    elif layer.lower() == "inner":
-        layers = [membrane.inner]
-    else:
-        layers = [membrane.outer, membrane.inner]
+    # Set random seed
+    rng = np.random.default_rng(seed)
 
-    for membrane_layer in layers:
-        layer_name = "outer" if membrane_layer is membrane.outer else "inner"
-        logger.info(f"Processing {layer_name} layer")
+    # Determine leaflets to process
+    leaflets = []
+    if membrane.monolayer or leaflet.lower() == "outer":
+        leaflets = [("outer", membrane.outer)]
+    elif leaflet.lower() == "inner":
+        leaflets = [("inner", membrane.inner)]
+    elif leaflet.lower() == "both":
+        leaflets = [("outer", membrane.outer)]
+        if not membrane.monolayer:
+            leaflets.append(("inner", membrane.inner))
 
-        n_points = len(membrane_layer.ids)
-        curvatures = membrane_layer.mean_curvature
+    for leaflet_name, membrane_leaflet in leaflets:
+        logger.info(f"Processing {leaflet_name} leaflet")
+
+        n_points = len(membrane_leaflet.ids)
+        curvatures = membrane_leaflet.mean_curvature
 
         # Flip curvature sign for inner membrane
-        if layer_name == "inner":
+        if leaflet_name == "inner":
             curvatures = -curvatures
 
         # Initialize domain assignments and tracking
@@ -154,10 +152,11 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
         available_lipids = set(range(len(lipids)))
 
         # Randomly process points
-        perm=rng.permuted(range(len(membrane_layer.ids)))
-        permuted_ids=membrane_layer.ids[perm]
-        permuted_areas=membrane_layer.area[perm]
-        for c,idx in enumerate(permuted_ids):
+        perm = rng.permuted(range(len(membrane_leaflet.ids)))
+        permuted_ids = membrane_leaflet.ids[perm]
+        permuted_areas = membrane_leaflet.area[perm]
+
+        for c, idx in enumerate(permuted_ids):
             local_curv = curvatures[idx]
 
             # Calculate weights only for available lipid types
@@ -169,10 +168,11 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
                 valid_lipids = list(range(len(lipids)))
 
             valid_specs = [lipids[i] for i in valid_lipids]
-            if area:
-                weights = calculate_curvature_weights(local_curv, valid_specs, k_factor,permuted_areas[c])
+            if area_weighted:
+                weights = calculate_curvature_weights(local_curv, valid_specs, k_factor, permuted_areas[c])
             else:
                 weights = calculate_curvature_weights(local_curv, valid_specs, k_factor)
+
             # Choose lipid type and update bookkeeping
             chosen_idx = rng.choice(valid_lipids, p=weights)
             new_domains[idx] = lipids[chosen_idx].domain_id
@@ -182,7 +182,7 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
                 available_lipids.remove(chosen_idx)
 
         # Update membrane
-        membrane_layer.domain_ids = new_domains
+        membrane_leaflet.domain_ids = new_domains
 
         # Log results
         for lipid in lipids:
@@ -192,45 +192,52 @@ def assign_domains(membrane: Point, lipids: Sequence[LipidSpec], layer: str = "b
 
 def DOP(args: List[str]) -> None:
     """Main entry point for Domain Placer tool"""
-    parser = argparse.ArgumentParser(description=__doc__,
-                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-p', '--point-dir', type=Path, default="point",
-                       help='Path to membrane point directory (default: point/)')
-    parser.add_argument('-i', '--input', type=Path, default="domain_input.txt",
-                       help='Path to lipid specification file (default: domain_input.txt)')
-    parser.add_argument('-l', '--leaflet', choices=['both', 'inner', 'outer'],
-                       default='both', help='Which membrane leaflet(s) to modify (default: both)')
-    parser.add_argument('-k', '--k-factor', type=float, default=1.0,
-                       help='Scaling factor for curvature preference strength (default: 1.0)')
-    parser.add_argument('-o', '--output', type=Path,
-                       help='Output directory (defaults to input directory)')
-    parser.add_argument('-ni', '--new-input', type=Path, default="input_DOP.str",
-                       help='Path for output input.str file (default: input.str)')
-    parser.add_argument('-oi', '--old-input', type=Path,
-                       help='Path to existing input.str to preserve additional sections')
-    parser.add_argument('--seed', type=int, help='Random seed for reproducibility')
-    parser.add_argument('--area',default=False,action='store_true',help="Considers the area of each point for weight calculation")
+    parser = argparse.ArgumentParser(description="Place lipids in membrane domains based on curvature preferences")
+
+    parser.add_argument('--point-dir', '-p', default="point/",
+                       help="Path to point folder (default: point/)")
+    parser.add_argument('--lipid-specs', '-s', default="domain_input.txt",
+                       help="Path to lipid specification file (default: domain_input.txt)")
+    parser.add_argument('--leaflet', '-l', choices=['both', 'inner', 'outer'], default='both',
+                       help="Which membrane leaflet to modify (default: both)")
+    parser.add_argument('--k-factor', '-k', type=float, default=1.0,
+                       help="Curvature preference strength (default: 1.0)")
+    parser.add_argument('--output-dir', '-o',
+                       help="Output directory (default: overwrite input with backup)")
+    parser.add_argument('--no-backup', action='store_true',
+                       help="Skip creating backup when overwriting input")
+    parser.add_argument('--new-input', '-ni', default="input_DOP.str",
+                       help="Path for output input.str file (default: input_DOP.str)")
+    parser.add_argument('--old-input', '-no',
+                       help="Path to existing input.str to preserve additional sections")
+    parser.add_argument('--area', action='store_true',
+                       help="Consider area of each point for weight calculation")
+    parser.add_argument('--seed', type=int,
+                       help="Random seed for reproducibility")
 
     args = parser.parse_args(args)
-    logging.basicConfig(level=logging.INFO)
 
-    # setup numpy random number generator
-    global rng
-    rng = np.random.default_rng(args.seed)
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-    try:
-        membrane = Point(args.point_dir)
-        lipids = parse_lipid_file(args.input)
+    # Load membrane and lipid specifications
+    logger.info(f"Loading membrane from {args.point_dir}")
+    membrane = Point(args.point_dir)
 
-        assign_domains(membrane, lipids, args.leaflet, args.k_factor,args.area)
+    logger.info(f"Loading lipid specifications from {args.lipid_specs}")
+    lipids = parse_lipid_file(Path(args.lipid_specs))
 
-        write_input_str(lipids, args.new_input, args.old_input)
-        logger.info(f"Created input file: {args.new_input}")
+    # Assign domains
+    assign_domains(membrane, lipids, args.leaflet, args.k_factor, args.area, args.seed)
 
-        output_dir = args.output or args.point_dir
-        membrane.save(output_dir)
-        logger.info(f"Updated membrane domains in {output_dir}")
+    # Write input.str file
+    old_input_path = Path(args.old_input) if args.old_input else None
+    write_input_str(lipids, Path(args.new_input), old_input_path)
+    logger.info(f"Created input file: {args.new_input}")
 
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        raise
+    # Save results
+    output_dir = args.output_dir if args.output_dir else args.point_dir
+    backup = not args.no_backup
+    membrane.save(output_dir, backup=backup)
+
+    logger.info(f"Finished updating membrane domains!")

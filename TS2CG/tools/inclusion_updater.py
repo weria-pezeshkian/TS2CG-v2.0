@@ -1,278 +1,160 @@
 """
-CLI tool to place protein inclusions in membrane.
-Reads input.str for protein definitions and places new inclusions in the membrane.
-
-Usage:
-    TS2CG INU -p point -t 0 -r 2 -N 10 -c 0.1 -o point_new -l both
+Tool to place protein inclusions in membrane.
 """
 
 import argparse
-from pathlib import Path
 import numpy as np
 import logging
-from dataclasses import dataclass
-from typing import List, Optional, Set, Dict, Sequence, Literal
+from typing import List, Optional, Set
 from scipy.special import logsumexp
-from scipy.spatial.distance import cdist
+from scipy.spatial import KDTree
 
 from ..core.point import Point
 
 logger = logging.getLogger(__name__)
 
-def pbc_wrap(membrane):
-    """Wrap membrane coordinates into the primary box"""
-    box = membrane.box
-    membrane.outer.coordinates = membrane.outer.coordinates - box * np.round(membrane.outer.coordinates / box)
-    if not membrane.monolayer:
-        membrane.inner.coordinates = membrane.inner.coordinates - box * np.round(membrane.inner.coordinates / box)
-    return membrane
 
-def get_nearby_points_both_leaflets(membrane: Point, leaflet: str, point_idx: int,
-                                  radius: float) -> Dict[str, np.ndarray]:
-    """
-    Find points within radius in both leaflets from a point in the specified leaflet.
+def get_excluded_points(membrane: Point, radius: float) -> Set[int]:
+    """Get points too close to existing proteins."""
+    excluded = set()
 
-    Args:
-        membrane: Membrane Point object
-        leaflet: Which leaflet the center point is in ('inner' or 'outer')
-        point_idx: Index of the center point
-        radius: Exclusion radius
+    if not membrane.inclusions:
+        return excluded
 
-    Returns:
-        Dict with excluded points for each leaflet
-    """
-    # Get coordinates of the center point
-    source_layer = membrane.outer if leaflet == 'outer' else membrane.inner
-    center_coords = source_layer.coordinates[point_idx]
+    box_dims = np.array(membrane.box)
 
-    excluded = {}
+    # Shift and wrap coordinates for KDTree
+    coordinates = membrane.outer.coordinates + box_dims / 2
+    coordinates = coordinates % box_dims
 
-    # Check both leaflets
-    for target_leaflet in ['outer', 'inner']:
-        if target_leaflet == 'inner' and membrane.monolayer:
-            continue
+    # Build KDTree with periodic boundary conditions
+    tree = KDTree(coordinates, boxsize=box_dims)
 
-        target_layer = membrane.outer if target_leaflet == 'outer' else membrane.inner
-
-        # Calculate displacement vectors
-        displacement = target_layer.coordinates - center_coords
-
-        # Apply minimum image convention
-        displacement = displacement - membrane.box * np.round(displacement / membrane.box)
-
-        # Calculate distances
-        distances = np.sqrt(np.sum(displacement**2, axis=1))
-
-        # Get points within radius
-        excluded[target_leaflet] = np.where(distances <= radius)[0]
+    # Check exclusions around each existing protein
+    for inclusion in membrane.inclusions:
+        point_id = inclusion['point_id']
+        if point_id < len(coordinates):
+            center_coord = coordinates[point_id]
+            nearby_indices = tree.query_ball_point(center_coord, radius)
+            excluded.update(nearby_indices)
 
     return excluded
 
-def calculate_curvature_weights(curvatures: np.ndarray, target_curvature: Optional[float],
+
+def calculate_placement_weights(curvatures: np.ndarray, target_curvature: Optional[float],
                               k_factor: float) -> np.ndarray:
-    """Calculate Boltzmann weights based on curvature preference"""
+    """Calculate placement weights based on curvature preference."""
     if target_curvature is None:
-        # If no curvature preference, return uniform weights
         return np.ones_like(curvatures) / len(curvatures)
 
-    # Calculate weights using the log-sum-exp trick for numerical stability
     deltas = curvatures - target_curvature
     log_weights = -k_factor * deltas**2
-    log_weights -= logsumexp(log_weights)  # normalize
+    log_weights -= logsumexp(log_weights)
     return np.exp(log_weights)
 
-def get_points_near_existing_proteins(membrane: Point, radius: float) -> Dict[str, Set[int]]:
-    """Get points that are too close to existing proteins in any leaflet"""
-    excluded_points = {'outer': set(), 'inner': set()}
 
-    # Skip if no existing proteins
-    if not membrane.inclusions:
-        return excluded_points
+def place_proteins(membrane: Point, protein_type: int, radius: float, num_proteins: int,
+                  target_curvature: Optional[float] = None, k_factor: float = 1.0,
+                  seed: Optional[int] = None) -> None:
+    """Place proteins in outer membrane leaflet."""
 
-    # Check each existing protein
-    for inclusion in membrane.inclusions:
-        point_id = inclusion['point_id']
-        # Determine which leaflet the protein is in (assuming outer if point exists in both)
-        if point_id in membrane.outer.ids:
-            source_leaflet = 'outer'
-        else:
-            source_leaflet = 'inner'
+    # Set random seed
+    rng = np.random.default_rng(seed)
 
-        # Get points too close in both leaflets
-        nearby = get_nearby_points_both_leaflets(
-            membrane,
-            source_leaflet,
-            point_id,
-            radius
-        )
+    # Get box dimensions
+    box_dims = np.array(membrane.box)
 
-        # Update excluded points for each leaflet
-        for leaflet in nearby:
-            excluded_points[leaflet].update(nearby[leaflet])
+    # Shift and wrap coordinates for KDTree
+    coordinates = membrane.outer.coordinates + box_dims / 2
+    coordinates = coordinates % box_dims
 
-    return excluded_points
+    # Get excluded points
+    excluded = get_excluded_points(membrane, radius)
+    logger.info(f"Placing {num_proteins} proteins of type {protein_type} with radius {radius}")
 
-def place_proteins(membrane: Point, type_id: int, radius: float,
-                  num_proteins: Optional[int] = None, target_curvature: Optional[float] = None,
-                  k_factor: float = 1.0, leaflet: str = 'both') -> Dict[str, int]:
-    """Place proteins in membrane with given constraints"""
+    placed_total = 0
 
-    # Get next available type_id
-    existing_type_ids = [inc['type_id'] for inc in membrane.inclusions]
-    type_id = type_id or max(existing_type_ids, default=0) + 1
+    while placed_total < num_proteins:
+        # Find available placement points
+        all_indices = set(range(len(coordinates)))
+        available_indices = list(all_indices - excluded)
 
-    # Get points excluded by existing proteins
-    excluded_by_existing = get_points_near_existing_proteins(membrane, radius)
-    logger.info("Excluding points near existing proteins:")
-    for l, points in excluded_by_existing.items():
-        if points:
-            logger.info(f"  {l} leaflet: {len(points)} points excluded")
-
-    # Initialize available points for each leaflet
-    available_points = {
-        'outer': set(membrane.outer.ids) - excluded_by_existing['outer']
-                if leaflet in ['both', 'outer'] else set(),
-        'inner': (set(membrane.inner.ids) - excluded_by_existing['inner']
-                if not membrane.monolayer and leaflet in ['both', 'inner']
-                else set())
-    }
-
-    total_proteins = num_proteins if num_proteins else len(membrane.outer.ids)
-    results = {'outer': 0, 'inner': 0}
-
-    logger.info(f"Attempting to place {total_proteins} of protein type {type_id}")
-    logger.info(f"Available points for placement:")
-    for l, points in available_points.items():
-        if points:
-            logger.info(f"  {l} leaflet: {len(points)} points")
-    logger.info(f"Radius: {radius:.1f} nm" +
-               (f", Target curvature: {target_curvature:.3f}" if target_curvature is not None else ""))
-
-    placed = 0
-    while placed < total_proteins:
-        # Determine valid leaflets (those with available points)
-        valid_leaflets = []
-        if leaflet in ['both', 'outer'] and available_points['outer']:
-            valid_leaflets.append('outer')
-        if leaflet in ['both', 'inner'] and available_points['inner']:
-            valid_leaflets.append('inner')
-
-        if not valid_leaflets:
-            logger.warning("No more valid points available for placement")
+        if not available_indices:
+            logger.warning(f"No more valid placement points. Placed {placed_total}/{num_proteins}")
             break
 
-        # Randomly choose leaflet
-        current_leaflet = rng.choice(valid_leaflets)
-        membrane_layer = membrane.outer if current_leaflet == 'outer' else membrane.inner
-
-        # Get valid indices for current leaflet
-        valid_indices = np.array(list(available_points[current_leaflet]))
-
-        # Calculate weights based on curvature preference
-        curvatures = membrane_layer.mean_curvature[valid_indices]
-        if current_leaflet == 'inner':
-            curvatures = -curvatures  # Flip curvature for inner leaflet
-
-        weights = calculate_curvature_weights(
-            curvatures,
-            target_curvature,
-            k_factor
-        )
+        # Calculate placement weights
+        available_indices = np.array(available_indices)
+        curvatures = membrane.outer.mean_curvature[available_indices]
+        weights = calculate_placement_weights(curvatures, target_curvature, k_factor)
 
         # Choose placement point
-        chosen_idx = rng.choice(valid_indices, p=weights)
+        chosen_idx = rng.choice(available_indices, p=weights)
 
-        # Add protein inclusion
+        # Add protein
         membrane.inclusions.add_protein(
-            type_id=type_id,
+            type_id=protein_type,
             point_id=chosen_idx
         )
 
-        # Update available points accounting for exclusion radius in both leaflets
-        nearby = get_nearby_points_both_leaflets(
-            membrane,
-            current_leaflet,
-            chosen_idx,
-            radius
-        )
+        # Update excluded points using KDTree
+        tree = KDTree(coordinates, boxsize=box_dims)
+        center_coord = coordinates[chosen_idx]
+        nearby_indices = tree.query_ball_point(center_coord, radius)
+        excluded.update(nearby_indices)
 
-        # Update available points for both leaflets
-        for leaflet_name, excluded in nearby.items():
-            available_points[leaflet_name] -= set(excluded)
+        placed_total += 1
+        logger.info(f"Placed protein {placed_total} at point {chosen_idx}")
 
-        placed += 1
-        results[current_leaflet] += 1
-        logger.debug(f"Placed protein at point {chosen_idx} in {current_leaflet} leaflet")
+    logger.info(f"Finished placing {placed_total} proteins")
 
-    return results
 
 def INU(args: List[str]) -> None:
     """Main entry point for protein inclusion tool"""
-    parser = argparse.ArgumentParser(description=__doc__,
-                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-p', '--point-dir', type=Path, default="point",
-                       help='Path to membrane point directory (default: point/)')
-    parser.add_argument('-t', '--type-id', type=int, required=False,
-                       help='Specify which protein type to add into the membrane ')
-    parser.add_argument('-r', '--radius', type=float, required=True,
-                       help='Exclusion radius for protein placement (point to point distance)')
-    parser.add_argument('-c', '--curvature', type=float,
-                       help='Target curvature for placement (optional)')
-    parser.add_argument('-n', '--num-proteins', type=int,
-                       help='Number of proteins to place (optional)')
-    parser.add_argument('-k', '--k-factor', type=float, default=1.0,
-                       help='Scaling factor for curvature preference strength (default: 1.0)')
-    parser.add_argument('-l', '--leaflet', choices=['both', 'inner', 'outer'],
-                       default='both', help='Which membrane leaflet(s) to modify (default: both)')
-    parser.add_argument('-o', '--output', type=Path,
-                       help='Output directory (defaults to input directory)')
+    parser = argparse.ArgumentParser(description="Place protein inclusions in outer membrane")
+
+    parser.add_argument('--point-dir', '-p', default="point/",
+                       help="Path to point folder (default: point/)")
+    parser.add_argument('--protein-type', '-t', type=int, required=True,
+                       help="Protein type ID to place")
+    parser.add_argument('--radius', '-r', type=float, required=True,
+                       help="Exclusion radius for protein placement")
+    parser.add_argument('--num-proteins', '-n', type=int, required=True,
+                       help="Number of proteins to place")
+    parser.add_argument('--curvature', '-c', type=float,
+                       help="Target curvature for placement (optional)")
+    parser.add_argument('--k-factor', '-k', type=float, default=1.0,
+                       help="Curvature preference strength (default: 1.0)")
+    parser.add_argument('--output-dir', '-o',
+                       help="Output directory (default: overwrite input with backup)")
+    parser.add_argument('--no-backup', action='store_true',
+                       help="Skip creating backup when overwriting input")
     parser.add_argument('--seed', type=int,
-                       help='Random seed for reproducibility')
+                       help="Random seed for reproducibility")
 
     args = parser.parse_args(args)
-    logging.basicConfig(level=logging.INFO)
 
-    if args.num_proteins is None and args.curvature is not None:
-        logger.warning(
-            "Curvature preference specified without number of proteins to place. "
-            "This will attempt to place proteins at all valid points, which may not be desired. "
-            "Consider specifying -N/--num-proteins to limit the number of proteins placed."
-        )
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-    # setup numpy random number generator
-    global rng
-    rng = np.random.default_rng(args.seed)
+    # Load membrane
+    logger.info(f"Loading membrane from {args.point_dir}")
+    membrane = Point(args.point_dir)
 
-    try:
-        # Load membrane
-        membrane = Point(args.point_dir)
+    # Place proteins
+    place_proteins(
+        membrane=membrane,
+        protein_type=args.protein_type,
+        radius=args.radius,
+        num_proteins=args.num_proteins,
+        target_curvature=args.curvature,
+        k_factor=args.k_factor,
+        seed=args.seed
+    )
 
-        # wrap membrane inside box
-        membrane = pbc_wrap(membrane)
+    # Save results
+    output_dir = args.output_dir if args.output_dir else args.point_dir
+    backup = not args.no_backup
+    membrane.save(output_dir, backup=backup)
 
-        # Place proteins
-        results = place_proteins(
-            membrane=membrane,
-            type_id=args.type_id,
-            radius=args.radius,
-            num_proteins=args.num_proteins,
-            target_curvature=args.curvature,
-            k_factor=args.k_factor,
-            leaflet=args.leaflet
-        )
-
-        # Log results
-        total_placed = sum(results.values())
-        logger.info(f"Successfully placed {total_placed} of protein type {args.type_id}:")
-        for leaflet, count in results.items():
-            if count > 0:
-                logger.info(f"  {leaflet} leaflet: {count} proteins")
-
-        # Save membrane
-        output_dir = args.output or args.point_dir
-        membrane.save(output_dir)
-        logger.info(f"Updated membrane in {output_dir}")
-
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        raise
+    logger.info(f"Finished updating membrane inclusions!")

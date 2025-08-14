@@ -73,5 +73,5 @@ class Exclusion:
             indices: List[int]
                 list of indices of inclusions to remove
         """
-        for index in indices:
+        for index in sorted(indices, reverse=True):
             self.remove_pore[index]

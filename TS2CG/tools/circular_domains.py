@@ -1,185 +1,136 @@
 """
-CLI tool to place lipids to assign circular domains around inclusions or points.
+Tool to assign circular domains around inclusions or specific points.
 """
 
 import argparse
-from pathlib import Path
 import numpy as np
 import logging
-from dataclasses import dataclass
-from typing import List, Optional, Sequence, Dict
-from scipy.special import logsumexp
-import networkx as nx
-from scipy.spatial.distance import cdist
+from typing import List, Optional
+from scipy.spatial import KDTree
 
 from ..core.point import Point
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class LipidSpec:
-    """Specification for a lipid type and its properties"""
-    domain_id: int
-    name: str
-    percentage: float
-    curvature: float
-    density: float
 
-def parse_lipid_file(file_path: Path) -> List[LipidSpec]:
-    """Parse lipid specification file into structured data"""
-    lipids = []
-    with open(file_path) as f:
-        for line in f:
-            if line.strip() and not line.startswith(';'):
-                domain_id, name, percentage, curvature, density = line.split()
-                lipids.append(LipidSpec(
-                    domain_id=int(domain_id),
-                    name=name,
-                    percentage=float(percentage),
-                    curvature=float(curvature),
-                    density=float(density)
-                ))
+def get_domain_centers(membrane: Point, protein_type: Optional[int] = None,
+                      manual_points: Optional[List[int]] = None) -> List[int]:
+    """Get domain center points from protein inclusions and/or manually specified points."""
+    domain_centers = []
 
-    total = sum(lipid.percentage for lipid in lipids)
-    if not np.isclose(total, 1.0, atol=0.01):
-        raise ValueError(f"Lipid percentages must sum to 1.0 (got {total:.2f})")
+    if protein_type is not None:
+        protein_points = [inc["point_id"] for inc in membrane.inclusions.get_by_type(protein_type)]
+        domain_centers.extend(protein_points)
+        logger.info(f"Added {len(domain_centers)} domain centers on proteins of type {protein_type}")
 
-    return lipids
+    if manual_points:
+        domain_centers.extend(manual_points)
+        logger.info(f"Added {len(manual_points)} manually specified domain centers")
 
-def write_input_str(lipids: Sequence[LipidSpec], output_file: Path, old_input: Optional[Path] = None) -> None:
-    """
-    Write input.str file for TS2CG, preserving all comments and sections except [Lipids List].
-    Maintains exact formatting of the original file.
-    """
-    # If no old input exists, just write the lipids section
-    if not old_input or not old_input.exists():
-        with open(output_file, 'w') as f:
-            f.write("[Lipids List]\n")
-            for lipid in lipids:
-                f.write(f"Domain {lipid.domain_id}\n")
-                f.write(f"{lipid.name} 1 1 {lipid.density}\n")
-                f.write("End\n")
-        return
+    unique_centers = list(set(domain_centers))
+    logger.info(f"Total domain centers: {len(unique_centers)}")
 
-    # Read the old file and process it section by section
-    with open(old_input) as f:
-        content = f.read()
+    return unique_centers
 
-    # Split the content into sections
-    sections = []
-    current_section = []
-    in_lipids_section = False
+def assign_circular_domains(membrane: Point, radius: float, domain_centers: List[int],
+                          domain_id: int, leaflet: str = "both") -> None:
+    """Assign domain IDs to all points within radius of domain centers."""
 
-    for line in content.split('\n'):
-        # Detect section headers
-        if line.strip().startswith('['):
-            # If we were building a section, save it
-            if current_section:
-                sections.append('\n'.join(current_section) + '\n')
-                current_section = []
+    # Get box dimensions
+    box_dims = np.array(membrane.box)
 
-            # Check if we're entering the lipids section
-            if '[Lipids List]' in line:
-                in_lipids_section = True
-                # Create new lipids section
-                new_section = ['[Lipids List]']
-                for lipid in lipids:
-                    new_section.extend([
-                        f"Domain {lipid.domain_id}",
-                        f"{lipid.name} 1 1 {lipid.density}",
-                        "End"
-                    ])
-                sections.append('\n'.join(new_section) + '\n')
-            else:
-                in_lipids_section = False
-                current_section.append(line)
-        # For non-header lines
-        elif not in_lipids_section:
-            current_section.append(line)
+    # Determine which leaflets to process
+    leaflets_to_process = []
+    if membrane.monoleaflet or leaflet.lower() == "outer":
+        leaflets_to_process = [("outer", membrane.outer)]
+    elif leaflet.lower() == "inner":
+        leaflets_to_process = [("inner", membrane.inner)]
+    elif leaflet.lower() == "both":
+        leaflets_to_process = [("outer", membrane.outer), ("inner", membrane.inner)]
 
-    # Add the last section if it exists
-    if current_section and not in_lipids_section:
-        sections.append('\n'.join(current_section))
+    for leaflet_name, membrane_leaflet in leaflets_to_process:
+        # Shift and wrap coordinates for KDTree
+        coordinates = membrane_leaflet.coordinates + box_dims / 2
+        coordinates = coordinates % box_dims
 
-    # Write everything back to the file
-    with open(output_file, 'w') as f:
-        f.write('\n'.join(sections))
+        # Build KDTree with periodic boundary conditions
+        tree = KDTree(coordinates, boxsize=box_dims)
 
-def _get_centers(membrane,Type,dummys):
-    from_type=[inc["point_id"] for inc in membrane.inclusions.get_by_type(Type)]
-    from_dummy=dummys.strip().replace(" ","").split(",")
+        for center_idx in domain_centers:
+            if center_idx >= len(membrane_leaflet.coordinates):
+                logger.warning(f"Domain center {center_idx} does not exist in {leaflet_name} leaflet")
+                continue
 
-    to_set=list(set(from_type+from_dummy))
+            # Use wrapped coordinates for center query
+            center_coord = coordinates[center_idx]
 
-    return list(filter(None,to_set))
+            # Query ball points around center with periodic boundaries
+            within_radius_indices = tree.query_ball_point(center_coord, radius)
 
-def _dijkstra_within_radius(distance_matrix, start_index, radius,percent=100):
-    if percent != 100:
-        distance_matrix = distance_matrix[distance_matrix < np.percentile(distance_matrix,percent)] = 0
-    G = nx.from_numpy_array(distance_matrix)
-    shortest_paths = nx.single_source_dijkstra_path_length(G, start_index)
-    reachable_nodes = [node for node, dist in shortest_paths.items() if dist < radius]
-    return reachable_nodes
+            # Assign domain ID
+            if len(within_radius_indices) > 0:
+                within_radius_indices = np.array(within_radius_indices)
+                membrane_leaflet.domain_ids[within_radius_indices] = domain_id
 
-def _within_radius(distance_matrix,radius):
-    reachable_nodes=[]
-    for i,value in enumerate(distance_matrix):
-        if value <= radius:
-            reachable_nodes.append(i)
-
-    return reachable_nodes
-
-
-def circular_domains(membrane: Point, radius: float, pointid: list, domain: int, path_dist: bool=False, percent: float=100.0, layer: str = "both") -> None:
-    """Assign lipids to domains based on curvature preferences"""
-    layers = [membrane.outer]
-
-    if membrane.monolayer or layer.lower() == "outer":
-        layers = [membrane.outer]
-    elif layer.lower() == "inner":
-        layers = [membrane.inner]
-    else:
-        layers = [membrane.outer, membrane.inner]
-
-    for layer in layers:
-        if path_dist:
-            dist_matrix = cdist(layer.coordinates, layer.coordinates)
-        for point in pointid:
-            if path_dist:                
-                nodes=_dijkstra_within_radius(dist_matrix,int(point),radius,percent)
-            else:
-                dist_matrix=cdist(layer.coordinates,[layer.coordinates[int(point)]])
-                nodes=_within_radius(dist_matrix,radius)
-            for index in nodes:
-                layer.domain_ids[index]=domain
-
+        logger.info(f"Finished processing {leaflet_name} leaflet")
 
 def DAI(args: List[str]) -> None:
-    """Main entry point for Domain Placer tool"""
-    parser = argparse.ArgumentParser(description=__doc__,
-                                   formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-p','--point_dir',default="point/",help="Specify the path to the point folder")
-    parser.add_argument('-r','--radius',default=1,type=float,help="The radius around a protein in which domains should be changed.")
-    parser.add_argument('-t','--type',default=0,type=int,help="The protein type around which domains should be changed.")
-    parser.add_argument('-d','--Domain',default=1,type=int,help="The domain number that should be set around the protein.")
-    parser.add_argument('-l','--leaflet',default="both",help="Choose which membrane leaflet to alter. Default is both")
-    parser.add_argument('-dummy','--dummy',default="",help="Create a dummy protein to place a circular domain around it. Excepts pointids like 3,7,22")
-    parser.add_argument('-pd','--path_distance',default=False,type=bool,help="Slower execution, but needed for higher curvature membranes to assign the domain to only one membrane part")
-    parser.add_argument('-pdP','--path_distance_percentile',default=100.0,type=float,help="Manipulates neighbors in path distance, tests have shown that 2 works well")
+    """Main entry point for circular domain assignment tool"""
+    parser = argparse.ArgumentParser(description="Assign circular domains around inclusions or points")
+
+    parser.add_argument('--point-dir', '-p', default="point/",
+                       help="Path to point folder (default: point/)")
+    parser.add_argument('--radius', '-r', type=float, required=True,
+                       help="Radius for circular domain assignment")
+    parser.add_argument('--domain-id', '-d', type=int,
+                       help="Domain ID to assign to points within radius (required for domain assignment)")
+    parser.add_argument('--protein-type', '-t', type=int,
+                       help="Protein type ID to use as domain centers")
+    parser.add_argument('--manual-points', '-m',
+                       help="Comma-separated point IDs to use as domain centers (e.g., '3,7,22')")
+    parser.add_argument('--leaflet', '-l', choices=['outer', 'inner', 'both'], default='both',
+                       help="Which membrane leaflet to modify (default: both)")
+    parser.add_argument('--output-dir', '-o',
+                       help="Output directory (default: overwrite input with backup)")
+    parser.add_argument('--no-backup', action='store_true',
+                       help="Skip creating backup when overwriting input")
 
     args = parser.parse_args(args)
-    logging.basicConfig(level=logging.INFO)
 
-    try:
-        membrane = Point(args.point_dir)
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-        centers=_get_centers(membrane, args.type,args.dummy)
-        circular_domains(membrane=membrane,radius=args.radius,pointid=centers,domain=args.Domain, layer=args.leaflet,path_dist=args.path_distance,percent=args.path_distance_percentile)
+    # Load membrane
+    logger.info(f"Loading membrane from {args.point_dir}")
+    membrane = Point(args.point_dir)
 
-        output_dir = args.point_dir
-        membrane.save(output_dir)
-        logger.info(f"Updated membrane domains in {output_dir}")
+    # Validate inputs for domain assignment
+    if args.protein_type is None and args.manual_points is None:
+        raise ValueError("Must specify either --protein-type or --manual-points for domain assignment")
 
-    except Exception as e:
-        logger.error(f"Error: {e}")
-        raise
+    if args.domain_id is None:
+        raise ValueError("Must specify --domain-id for domain assignment")
+
+    # Parse manual points
+    manual_points = None
+    if args.manual_points:
+        try:
+            manual_points = [int(p.strip()) for p in args.manual_points.split(',')]
+        except ValueError:
+            raise ValueError("Manual points must be comma-separated integers")
+
+    # Get domain centers
+    domain_centers = get_domain_centers(membrane, args.protein_type, manual_points)
+
+    if not domain_centers:
+        raise ValueError("No domain centers found")
+
+    # Assign domains
+    assign_circular_domains(membrane, args.radius, domain_centers, args.domain_id, args.leaflet)
+
+    # Save results
+    output_dir = args.output_dir if args.output_dir else args.point_dir
+    backup = not args.no_backup
+    membrane.save(output_dir, backup=backup)
+
+    logger.info(f"Finished with updating membrane domains!")
