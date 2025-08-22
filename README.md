@@ -2,6 +2,8 @@
 
 # TS2CG version 2.0
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15240476.svg)](https://doi.org/10.5281/zenodo.15240476)
+[![DOI](https://zenodo.org/badge/DOI/10.1038/s41467-020-16160-6.svg)](https://doi.org/10.1038/s41467-020-16160-6)
 
 TS2CG converts triangulated surfaces (TS) to coarse-grained membrane models for molecular
 simulation.
