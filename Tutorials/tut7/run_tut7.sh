@@ -20,7 +20,7 @@ fi
 
 echo "Modifying point-folder using TS2CG DOP with domain_input.txt..."
 
-TS2CG DOP -i domain_input.txt -ni input_DOP.str -k 10
+TS2CG DOP -s domain_input.txt -ni input_DOP.str -k 10
 
 if [ $? -ne 0 ]; then
     echo "Error: TS2CG DOP (point-folder modification) failed."
