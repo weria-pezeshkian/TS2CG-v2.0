@@ -45,12 +45,12 @@ TS2CG PLM -TSfile Sphere.tsi -bilayerThickness 3.8 -rescalefactor 4 4 4 -o point
 
 # Add proteins
 
-TS2CG INU -p point_vesicle -n 3 -t 1 -r 5 -o point_vesicle_new -l outer || {
+TS2CG INU -p point_vesicle -n 3 -t 1 -r 5 -o point_vesicle_new || {
     echo "Error: TS2CG INU for protein type 1 failed."
     exit 1
 }
 
-TS2CG INU -p point_vesicle_new -n 2 -t 2 -r 5 -o point_vesicle_new2 -l outer || {
+TS2CG INU -p point_vesicle_new -n 2 -t 2 -r 5 -o point_vesicle_new2 || {
     echo "Error: TS2CG INU for protein type 2 failed."
     exit 1
 }
