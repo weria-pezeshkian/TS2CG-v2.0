@@ -40,9 +40,9 @@ files="files"
 
 TS2CG PLM -TSfile Sphere_2.tsi -bilayerThickness 3.8 -rescalefactor 4 4 4 || { echo "Error: TS2CG PLM command failed"; exit 1; }
 
-TS2CG DAI -p point -r 4 -d 1 -dummy 5,22 || { echo "Error: TS2CG DAI command for domain 1 failed"; exit 1; }
+TS2CG DAI -p point -r 4 -d 1 -m 5,22 || { echo "Error: TS2CG DAI command for domain 1 failed"; exit 1; }
 
-TS2CG DAI -p point -r 5 -d 2 -dummy 30 || { echo "Error: TS2CG DAI command for domain 2 failed"; exit 1; }
+TS2CG DAI -p point -r 5 -d 2 -m 30 || { echo "Error: TS2CG DAI command for domain 2 failed"; exit 1; }
 
 TS2CG PCG -str input.str -Bondlength 0.2 -LLIB $files/Martini3.LIB -defout system_2 || { echo "Error: TS2CG PCG command failed"; exit 1; }
 
