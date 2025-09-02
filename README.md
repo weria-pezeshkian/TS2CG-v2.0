@@ -10,11 +10,15 @@ simulation.
 It also works as a backmapping algorithm from dynamically triangulated surfaces simulations to CG molecular dynamics simulations or
 to take electron microscopy tomography data and build structures for molecular dynamics simulations.
 
-## State
-
 **NOTE**: Version 2 is finalized
 
-CITE:
+## Quick references
+[About TS2CG](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/About-TS2CG) \
+[New Updates](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Updates-of-this-version)\
+[Tutorials for version 2.0](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Tutorial)\
+[Tutorials 1.1](https://cgmartini.nl/docs/tutorials/Martini3/TS2CG/)
+
+## Citation:
 ```bibtex
 @article{Pezeshkian2020Backmapping,
   title = {Backmapping triangulated surfaces to coarse-grained membrane models},
@@ -38,12 +42,6 @@ CITE:
 }
 
 ```
-
-## Quick references
-[About TS2CG](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/About-TS2CG) \
-[New Updates](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Updates-of-this-version)\
-[Tutorials for version 2.0](https://github.com/weria-pezeshkian/TS2CG-v2.0/wiki/Tutorial)\
-[Tutorials 1.1](https://cgmartini.nl/docs/tutorials/Martini3/TS2CG/)
 
 ## Installation
 
@@ -73,16 +71,11 @@ for pre-compiled binaries, source code and installation instructions.
 ```console
 pip3 install TS2CG
 ```
+**Note:** The PyPi repository is not updated during the development process, but will be soon. For now, please install via github as shown below.
+  
 #### Directly from GitHub
 ```console
 pip3 install git+https://github.com/weria-pezeshkian/TS2CG-v2.0
-```
-#### From source
-```console
-git clone https://github.com/weria-pezeshkian/TS2CG-v2.0
-cd TS2CG-v2.0
-python3 -m venv venv && source venv/bin/activate # Not required, but often convenient.
-pip3 install .
 ```
 
 ## Usage
@@ -90,7 +83,7 @@ For help on TS2CG and it's executables run:
 
 ```console
 TS2CG -h
-TS2CG {SOL,PLM,PCG} -h
+TS2CG {SOL,PLM,PCG,...} -h
 ```
 
 ## Pointillism (PLM)
