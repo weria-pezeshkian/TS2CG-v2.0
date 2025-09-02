@@ -44,7 +44,7 @@ TS2CG PLM -TSfile Small_Curved.tsi -bilayerThickness 3.8 -rescalefactor 4 4 4 -o
 }
 
 # Add proteins
-TS2CG INU -p point_SmallCurved -n 10 -t 1 -r 5 -c -0.5 -k 100 -o point_SmallCurved_new -l both || {
+TS2CG INU -p point_SmallCurved -n 10 -t 1 -r 5 -c -0.5 -k 100 -o point_SmallCurved_new || {
     echo "Error: TS2CG INU failed."
     exit 1
 }
