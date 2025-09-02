@@ -33,11 +33,9 @@ def get_domain_centers(membrane: Point, protein_type: Optional[int] = None,
 
 
 def assign_circular_domains(membrane: Point, radius: float, domain_centers: List[int],
-                          domain_id: int, leaflet: str = "both", use_path_distance: bool = False) -> None:
+                          domain_id: int, leaflet: str = "both", use_path_distance: bool = False,
+                          edge_cutoff: float = 5) -> None:
     """Assign domain IDs to all points within radius of domain centers."""
-
-    # Get box dimensions
-    box_dims = np.array(membrane.box)
 
     # Determine which leaflets to process
     leaflets_to_process = []
@@ -54,6 +52,7 @@ def assign_circular_domains(membrane: Point, radius: float, domain_centers: List
         logger.info(f"Processing {leaflet_name} leaflet")
 
         # Build KDTree from point coordinates
+        box_dims = np.array(membrane.box)
         coordinates = membrane_leaflet.coordinates
         tree = KDTree(coordinates, boxsize=box_dims)
 
@@ -64,8 +63,9 @@ def assign_circular_domains(membrane: Point, radius: float, domain_centers: List
 
             if use_path_distance:
                 logger.info(f"Using path distance (Dijkstra) for domain assignment")
+
                 # Create sparse distance matrix
-                dist_matrix = KDTree.sparse_distance_matrix(tree, tree, max_distance=radius)
+                dist_matrix = KDTree.sparse_distance_matrix(tree, tree, max_distance=edge_cutoff)
 
                 # Convert to networkx graph
                 G = nx.from_scipy_sparse_array(dist_matrix)
@@ -111,6 +111,9 @@ def DAI(args: List[str]) -> None:
                        help="Skip creating backup when overwriting input")
     parser.add_argument('--path-distance', action='store_true',
                        help="Use path distance (Dijkstra) instead of euclidean distance for curved membranes")
+    parser.add_argument('--edge-cutoff', type=float, default=5.0,
+                        help="Maximum distance (nm) for graph edges in path distance mode. "
+                             "Edges longer than this are excluded, preventing shortcuts across membrane folds")
 
     args = parser.parse_args(args)
 
@@ -137,7 +140,7 @@ def DAI(args: List[str]) -> None:
 
     # Assign domains
     assign_circular_domains(membrane, args.radius, domain_centers, args.domain_id,
-                           args.leaflet, args.path_distance)
+                           args.leaflet, args.path_distance, args.edge_cutoff)
 
     # Save results
     output_dir = args.output_dir if args.output_dir else args.point_dir
