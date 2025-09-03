@@ -27,7 +27,8 @@ Edit_configuration::Edit_configuration( std::vector <std::string> Arguments) :
                     m_FindnewBox(false),          // Flag to find the smallest possible box
                     m_MosAlType("Type1"),          // Default algorithm type
                     m_BilayerThickness(3.8),       // Default bilayer thickness
-                    m_Iteration(1),               // Default degree of meshing (disabled)
+                    m_Iteration(1),               // Default degree of meshing
+                    m_calculate_iteration(true),
                     m_MeshFileName("TS.q"),        // Default mesh file name
                     m_AP(0.62),                    // Default area per lipid
                     m_BoxDist(4)
@@ -268,6 +269,7 @@ void Edit_configuration::UpdateVariables(const std::vector<std::string>& Argumen
                 m_AP = f.String_to_Double(Arguments[i + 1]);
             } else if (Arguments[i] == Def_DegreeOfMeshing) {
                 m_Iteration = f.String_to_Int(Arguments.at(i + 1));
+                m_calculate_iteration = false;
             } else if (Arguments[i] == Def_TaskName) {
                 m_TaskName = Arguments[i + 1];
             } else if (Arguments[i] == Def_OutputFolderName) {
@@ -323,7 +325,7 @@ void Edit_configuration::UpdateVariables(const std::vector<std::string>& Argumen
 bool Edit_configuration::ValidateVariable(){
     
     
-    if (m_Iteration < 1 ) {
+    if (m_Iteration < 0 ) {
         std::cout << "---> error: Iteration must be larger then 0.\n";
         return false;
     }
@@ -508,7 +510,7 @@ void Edit_configuration::BackMapOneLayer(int layer , std::string file, double H)
 
 //----> if the number of the iteration is not specified, we find an optimal one
     int Iteration = 0;
-    if(m_Iteration==-1 )
+    if(m_calculate_iteration==true )
     {
             double Tarea  = 0;
             for (std::vector<vertex *>::iterator it = (pMesh->m_pActiveV).begin() ; it != (pMesh->m_pActiveV).end(); ++it)

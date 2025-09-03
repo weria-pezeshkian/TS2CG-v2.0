@@ -26,6 +26,7 @@ private:
     std::vector<exclusion*>   m_pExc;
 
     int  m_Iteration;  // how many time we should increase the number of triangles each time, *4T, therefore N_T = N_T*4^m_Iteration
+    bool m_calculate_iteration;
     Vec3D m_Zoom ;
     std::string m_Folder ;  // Folder to write output in
     double m_AP ;
