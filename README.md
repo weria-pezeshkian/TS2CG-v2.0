@@ -34,11 +34,10 @@ to take electron microscopy tomography data and build structures for molecular d
 @article {Schuhmann2025.04.16.649160,
 	author = {Schuhmann, Fabian and Stevens, Jan A. and Rahmani, Neda and Lindahl, Isabell and Brown, Chelsea M. and Brasnett, Christopher and Anastasiou, Dimitrios and Bravo Vidal, Adri{\`a} and Geiger, Beatrice and Marrink, Siewert J. and Pezeshkian, Weria},
 	title = {TS2CG as a membrane builder},
-	elocation-id = {2025.04.16.649160},
+  	journal = {Journal of Chemical Theory and Computation},
 	year = {2025},
-	doi = {10.1101/2025.04.16.649160},
-	URL = {https://www.biorxiv.org/content/early/2025/07/22/2025.04.16.649160},
-	journal = {bioRxiv}
+	doi = {10.1021/acs.jctc.5c00833},
+	URL = {https://pubs.acs.org/doi/10.1021/acs.jctc.5c00833},
 }
 
 ```
