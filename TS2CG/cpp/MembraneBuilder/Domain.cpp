@@ -43,7 +43,7 @@ void Domain::Configure(bool renorm)
     for ( std::vector<DomainLipid>::iterator it = m_AllDomainLipids.begin(); it != m_AllDomainLipids.end(); it++ )
         totalratio+=(*it).Ratio ;
 
-    if(renorm==true)
+    if(renorm == true)
     {
         std::cout<<"--> You have asked for rerenormalization of the lipid ratio. The new values are \n";
         for ( std::vector<DomainLipid>::iterator it = m_AllDomainLipids.begin(); it != m_AllDomainLipids.end(); it++ )
