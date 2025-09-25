@@ -54,7 +54,7 @@ void Domain::Configure(bool renorm)
             std::cout<<"--> "<<(*it).Name<<"   "<<(*it).Ratio<<"  \n";
         }
     }
-    else if (totalratio<0.99999 && totalratio>1.000001)
+    else if (totalratio<0.99999 || totalratio>1.000001)
     {
         std::cout<<" warrning: the total lipid percentage for domain "<<m_DomainTypeID<<" is not 1. It is ("<<totalratio<<") make sure you know what are you doing or use -renorm option \n";
         

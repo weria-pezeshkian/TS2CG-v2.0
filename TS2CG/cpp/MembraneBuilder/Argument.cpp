@@ -17,7 +17,7 @@ Argument::Argument(std::vector <std::string> argument)
             m_Function("backmap"),
             m_RCutOff(0.5),
             m_Iter(5),
-            m_Renorm(false),
+            m_Renorm(true),
             m_SkipLipids(false),
             m_KEEP_POINTS_CLOSE_TO_PROTEINS(false),
             m_PRINT_LESS_OUTPUT(false)
