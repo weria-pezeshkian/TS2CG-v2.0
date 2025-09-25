@@ -43,22 +43,25 @@ void Domain::Configure(bool renorm)
     for ( std::vector<DomainLipid>::iterator it = m_AllDomainLipids.begin(); it != m_AllDomainLipids.end(); it++ )
         totalratio+=(*it).Ratio ;
 
-    if(renorm == true)
-    {
-        std::cout<<"--> You have asked for rerenormalization of the lipid ratio. The new values are \n";
-        for ( std::vector<DomainLipid>::iterator it = m_AllDomainLipids.begin(); it != m_AllDomainLipids.end(); it++ )
-        {
-            if(totalratio!=0)
-            (*it).Ratio = (*it).Ratio/totalratio;
-            
-            std::cout<<"--> "<<(*it).Name<<"   "<<(*it).Ratio<<"  \n";
+    if (renorm) {
+        std::cout << "--> You requested renormalization of the lipid ratio. "
+                  << "The new values are:\n";
+
+        if (totalratio != 0.0) {
+            for (auto &lipid : m_AllDomainLipids) {
+                lipid.Ratio /= totalratio;
+                std::cout << "--> " << lipid.Name << "   " << lipid.Ratio << '\n';
+            }
+            totalratio = 1.0;
+        } else {
+            std::cerr << "Error: total ratio is zero, cannot renormalize.\n";
         }
-        totalratio = 1;
     }
-    else if (totalratio<0.99999 || totalratio>1.000001)
-    {
-        std::cout<<" warrning: the total lipid percentage for domain "<<m_DomainTypeID<<" is not 1. It is ("<<totalratio<<") make sure you know what are you doing or use -renorm option \n";
-        
+    else if (std::abs(totalratio - 1.0) > 1e-6) {
+        std::cerr << "Warning: the total lipid percentage for domain "
+                  << m_DomainTypeID << " is " << totalratio
+                  << " (not 1). Make sure this is intentional, "
+                  << "or use the -renorm option.\n";
     }
     //== obtaining the total area of the domain points
     
