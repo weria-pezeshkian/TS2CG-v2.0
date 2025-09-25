@@ -62,6 +62,7 @@ void Domain::Configure(bool renorm)
     //== obtaining the total area of the domain points
     
     
+    totalratio = 0;
     for ( std::vector<DomainLipid>::iterator it = m_AllDomainLipids.begin(); it != m_AllDomainLipids.end(); it++ )
         totalratio+=(*it).Ratio ;
     double Tarea = 0; // total area of the domain point;
