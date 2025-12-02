@@ -28,7 +28,7 @@ class CMakeBuild(build_ext):
         build_temp.mkdir(parents=True, exist_ok=True)
 
         num_cores = multiprocessing.cpu_count()
-        build_args = ['--config', 'Release', '--', f'-j{num_cores}']
+        build_args = ['--config', 'Release', '--parallel', str(num_cores)]# '--', f'-j{num_cores}']
 
         os.chdir(build_temp)
         print(sourcedir, cmake_args)
