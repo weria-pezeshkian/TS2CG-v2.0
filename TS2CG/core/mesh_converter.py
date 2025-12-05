@@ -49,9 +49,9 @@ def adjust_mesh_file(args):
         try:
             import vtk
         except ImportError as exc:
-            raise RuntimeError("Using the vtk converter requires the optional dependency vtk\n
+            raise RuntimeError("""Using the vtk converter requires the optional dependency vtk\n
                                 Please install manually or run:\n
-                                pip3 install \"git+https://github.com/weria-pezeshkian/TS2CG-v2.0\#egg=TS2CG[vtk]\"")
+                                pip3 install 'git+https://github.com/weria-pezeshkian/TS2CG-v2.0\#egg=TS2CG[vtk]'""") from exc
         if file_extension == ".vtk":
             reader = vtk.vtkUnstructuredGridReader()
         else:
