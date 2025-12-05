@@ -1,4 +1,3 @@
-
 import bpy
 
 ob = bpy.context.active_object

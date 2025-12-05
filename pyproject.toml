@@ -15,6 +15,11 @@ authors = [
 license = {file = "LICENSE"}
 dependencies = ["numpy", "networkx", "scipy","matplotlib", "MDAnalysis", "vtk"]
 
+[project.optional-dependencies]
+converter = [
+    "vtk",
+]
+
 [tool.setuptools]
 packages = ["TS2CG"]
 package-dir = {"" = "."}

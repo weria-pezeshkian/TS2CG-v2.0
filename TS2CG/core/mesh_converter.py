@@ -46,7 +46,12 @@ def adjust_mesh_file(args):
     if file_extension == ".tsi":
         return args
     elif file_extension == ".vtk" or file_extension == ".vtu":
-        import vtk
+        try:
+            import vtk
+        except ImportError as exc:
+            raise RuntimeError("Using the vtk converter requires the optional dependency vtk\n
+                                Please install manually or run:\n
+                                pip3 install \"git+https://github.com/weria-pezeshkian/TS2CG-v2.0\#egg=TS2CG[vtk]\"")
         if file_extension == ".vtk":
             reader = vtk.vtkUnstructuredGridReader()
         else:
