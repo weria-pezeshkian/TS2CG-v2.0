@@ -261,5 +261,6 @@ bool Argument::ValidateVariables(){
         std::cout << "---> error: cutoff distance should be positive and larger then zero.\n";
         return false;
     }
+    
     return true;
 }

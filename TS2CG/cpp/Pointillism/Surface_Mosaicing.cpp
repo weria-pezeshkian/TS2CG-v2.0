@@ -414,6 +414,13 @@ void Surface_Mosaicing::BestEstimateOfMidPointPossition(links *l, double *X, dou
       Dr(1)=(t_1(1)-t_2(1))/4;
 
   }
+  else if(m_AlgorithmType == "Type0")
+  {
+ 
+      Dr(0)= 0;
+      Dr(1)= 0;
+
+  }
   else {
       std::cout<<"---> error: something wrong here, report to developer and send this id: PLM0983741 \n";
       exit(1);
@@ -447,9 +454,9 @@ void Surface_Mosaicing::BestEstimateOfMidPointPossition(links *l, double *X, dou
         z=zmid;
     }
     else{
-        x=xmid+GDr(0);
-        y=ymid+GDr(1);
-        z=zmid+GDr(2);
+        x = xmid + GDr(0);
+        y = ymid + GDr(1);
+        z = zmid + GDr(2);
     }
 
     *X=x;
