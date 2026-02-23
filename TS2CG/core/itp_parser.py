@@ -63,18 +63,32 @@ def parse_atoms(tokens: List[str]) -> AtomRow:
         mass=mass,
     )
 
+def int_or_str(x: str):
+    try:
+        return int(x)
+    except ValueError:
+        return x
 
 def parse_bonds(tokens: List[str]) -> BondRow:
     if len(tokens) < 3:
         raise ValueError(f"[ bonds ] expects >=3 columns, got: {tokens}")
-    return BondRow(ai=int(tokens[0]), aj=int(tokens[1]), funct=int(tokens[2]), params=tuple(tokens[3:]))
+    return BondRow(
+        ai=int(tokens[0]),
+        aj=int(tokens[1]),
+        funct=int_or_str(tokens[2]),
+        params=tuple(tokens[3:]),
+    )
 
 
 def parse_angles(tokens: List[str]) -> AngleRow:
     if len(tokens) < 4:
         raise ValueError(f"[ angles ] expects >=4 columns, got: {tokens}")
     return AngleRow(
-        ai=int(tokens[0]), aj=int(tokens[1]), ak=int(tokens[2]), funct=int(tokens[3]), params=tuple(tokens[4:])
+        ai=int(tokens[0]),
+        aj=int(tokens[1]),
+        ak=int(tokens[2]),
+        funct=int_or_str(tokens[3]),
+        params=tuple(tokens[4:]),
     )
 
 
@@ -86,7 +100,7 @@ def parse_dihedrals(tokens: List[str]) -> DihedralRow:
         aj=int(tokens[1]),
         ak=int(tokens[2]),
         al=int(tokens[3]),
-        funct=int(tokens[4]),
+        funct=int_or_str(tokens[4]),
         params=tuple(tokens[5:]),
     )
 
