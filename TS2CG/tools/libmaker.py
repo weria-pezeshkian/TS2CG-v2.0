@@ -415,9 +415,9 @@ def maker_itp(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base:
         print(f"Wrote lib file entry into {output}")
         u.dimensions = np.array([10.0, 10.0, 10.0, 90.0, 90.0, 90.0], dtype=np.float32)
 
-        with mda.coordinates.GRO.GROWriter("layout.gro") as W:
+        with mda.coordinates.GRO.GROWriter(mol.name+"_"+"layout.gro") as W:
             W.write(u.atoms)
-        exit()
+        
 
 
     """    
