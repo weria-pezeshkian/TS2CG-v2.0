@@ -412,42 +412,12 @@ def maker_itp(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base:
         coords = layout_xyz(G,mol, source, dz=1.0)
         u=universe_from_mol_and_coords(mol,coords)
         write_file(u,mol.name+"_"+output,mol.name)
-        print(f"Wrote lib file entry into {output}")
+        
         u.dimensions = np.array([10.0, 10.0, 10.0, 90.0, 90.0, 90.0], dtype=np.float32)
 
         with mda.coordinates.GRO.GROWriter(mol.name+"_"+"layout.gro") as W:
             W.write(u.atoms)
-        
-
-
-    """    
-    u = mda.Universe(file)
-    resname=u.residues[0].resname
-    pos = u.atoms.positions.copy()  # (N, 3)
-
-    am2 = u.select_atoms(f"name {base}")
-    if len(am2) != 1:
-        raise ValueError("Did not find exactly one atom named AM2.")
-    am2_pos = am2.positions[0]
-    pos -= am2_pos
-
-    cov = np.cov(pos.T)
-    eigvals, eigvecs = np.linalg.eigh(cov)
-    # sort eigenvectors by descending eigenvalue
-    order = np.argsort(eigvals)[::-1]
-    pc1 = eigvecs[:, order[0]]  # first principal component
-
-    R = rotate_to_z(pc1)
-
-    pos = pos.dot(R.T)
-
-    pos=stretch_positions(pos,sz,sxy)
-    if flipper:
-        pos[:,2]*=-1
-    u.atoms.positions = pos
-    write_file(u,output,resname)
-    print(f"Wrote lib file entry into {output}")
-    """
+        print(f"Wrote lib file entry into {output}")
 
 
 def library_file_preparer(args: List[str]) -> None:
