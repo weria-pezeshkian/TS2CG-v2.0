@@ -234,7 +234,4 @@ def read_itp_molecules(path: Path) -> List[MoleculeType]:
     return molecules
 
 if __name__ == "__main__":
-    mols = read_itp_molecules(Path("/home/guardian/Documents/TS2CG-v2.0/Tutorials/tut1/files/martini3/martini_v3.0_phospholipids.itp"))
-    print("Moleculetypes:", [m.name for m in mols])
-    for m in mols:
-        print(m.bonds)
+    pass

@@ -171,54 +171,63 @@ def straight_roads_from_source(G: nx.Graph, source: int) -> List[List[int]]:
     return roads
 
 
-def choose_neg_pos_roads(mol, roads: List[List[int]], seed: int | None = None) -> Tuple[List[int], List[int], List[List[int]]]:
+def decide_road(mol, road: List[int], *, seed: int | None = None) -> Tuple[str, int, bool]:
     """
-    Returns (neg_road, pos_road, rest_roads)
+    Decide how to place one road starting from the base bead.
 
-    Cascade rules (only proceed if unresolved):
-      1) more *type* starting with 'C' => negative
-      2) if charges appear, chain with charge => positive
-      3) longer => negative
-      4) randomize
+    Rules:
+    1) If there are >=3 continuous carbon-prefix atom types (atype startswith 'C')
+       at the beginning of the road => direction = "neg"
+    2) If a charge exists:
+         - if not neg by rule 1 => direction = "pos"
+         - if neg by rule 1 => keep neg and shift so first charged atom is at z=0
+    3) Fallback: randomize ("neg" or "pos")
+
+    Returns:
+      (direction, z_shift_steps, radial)
+        - direction: "neg" or "pos"
+        - z_shift_steps: integer dz steps to shift the whole road upward
+        - radial: True if the road should be placed off-axis
     """
-    roads_sorted = sorted(roads, key=len, reverse=True)
-    main = roads_sorted[:2]
-    rest = roads_sorted[2:]
-
-    if not main:
-        return [], [], rest
-    if len(main) == 1:
-        return main[0], [], rest
-
-    r1, r2 = main[0], main[1]
     atoms_by_nr = {a.nr: a for a in mol.atoms}
-
-    def count_type_C(road: List[int]) -> int:
-        return sum(1 for n in road if str(atoms_by_nr[n].atype).startswith("C"))
-
-    def has_charge(road: List[int], eps: float = 1e-12) -> bool:
-        return any(abs(float(atoms_by_nr[n].charge)) > eps for n in road)
-
-    # 1) more type starting with C => negative
-    c1, c2 = count_type_C(r1), count_type_C(r2)
-    if c1 != c2:
-        neg, pos = (r1, r2) if c1 > c2 else (r2, r1)
-        return neg, pos, rest
-
-    # 2) chain with charge => positive (if only one has charge)
-    q1, q2 = has_charge(r1), has_charge(r2)
-    if q1 != q2:
-        pos, neg = (r1, r2) if q1 else (r2, r1)
-        return neg, pos, rest
-
-    # 3) longer => negative
-    if len(r1) != len(r2):
-        neg, pos = (r1, r2) if len(r1) > len(r2) else (r2, r1)
-        return neg, pos, rest
-
-    # 4) randomize
     rng = random.Random(seed)
-    return (r1, r2, rest) if rng.random() < 0.5 else (r2, r1, rest)
+    eps = 1e-12
+
+    # --- rule 1: continuous carbon prefix ---
+    c_prefix = 0
+    for n in road:
+        if str(atoms_by_nr[n].atype).startswith("C"):
+            c_prefix += 1
+        else:
+            break
+
+    carbon_neg = c_prefix >= 3
+
+    # --- find first charged atom ---
+    first_charged_step = None
+    for step, n in enumerate(road, start=1):
+        if abs(float(atoms_by_nr[n].charge)) > eps:
+            first_charged_step = step
+            break
+
+    direction = "neg" if carbon_neg else None
+    z_shift_steps = 0
+    radial = False
+
+    # --- rule 2: charge handling ---
+    if first_charged_step is not None:
+        radial = True
+        if direction is None:
+            direction = "pos"
+        else:
+            # negative due to carbon prefix: shift upward so charge lands at z=0
+            z_shift_steps = first_charged_step
+
+    # --- rule 4: fallback ---
+    if direction is None:
+        direction = rng.choice(["neg", "pos"])
+
+    return direction, z_shift_steps, radial
 
 
 def walk_straight_chain(G: nx.Graph, fork: int, first: int, blocked: Set[int]) -> List[int]:
@@ -248,121 +257,527 @@ def walk_straight_chain(G: nx.Graph, fork: int, first: int, blocked: Set[int]) -
 
 # -------- only function you call --------
 def layout_xyz(G, mol, source: int, dz: float = 1.0, seed: int | None = None) -> List[Tuple[float, float, float]]:
+    """
+    Heuristic layout with global carbon constraint:
+
+    - source is immutable at (0,0,0)
+    - never overwrite coords for already-placed nodes (negative roads remain fixed once placed)
+    - carbon-run detection: ANY run of >=3 consecutive atype starting with 'C' anywhere in the chain
+    - rule:
+        * if carbon-run exists -> chain wants NEG; if charge exists, allow upward shift so charge can reach z~0
+        * if no carbon-run but charge exists -> POS
+        * else fallback prefers inherited sign
+      additionally:
+        * GLOBAL constraint: for any chain with carbon-run, ensure all C-type atoms in that chain have z <= 0
+          (shift the newly placed chain down if needed)
+    - break rule:
+        * if chain would start POS but has carbon-run: break at start of first carbon run:
+            - beads before anchor stay on parent x,y above anchor
+            - anchor+below goes down (negative) on a side lane
+          then apply global carbon constraint (so C never ends up above 0 even if fork is on +z trail)
+    - collision:
+        * distance-based
+        * radii tried: 2.0, 1.5, 1.0
+        * cutoff starts > 1*dz and decays each try
+    """
     rng = np.random.default_rng(seed)
+    atoms_by_nr = {a.nr: a for a in mol.atoms}
+    eps = 1e-12
 
-    roads = straight_roads_from_source(G, source)
-
-    # --- failsafe: source degree 1 => only negative branch, no positive branch ---
-    # (Explicitly override the neg/pos decision)
-    if G.degree(source) == 1:
-        if roads:
-            neg_road, pos_road, _rest = roads[0], [], roads[1:]
-        else:
-            neg_road, pos_road, _rest = [], [], []
-    else:
-        neg_road, pos_road, _rest = choose_neg_pos_roads(mol, roads, seed=seed)
+    # distance collision params
+    max_tries = 40
+    radii = (2.0, 1.5, 1.0)
+    cutoff0 = 1.35 * dz
+    cutoff_decay = 0.92
 
     coords: Dict[int, Tuple[float, float, float]] = {source: (0.0, 0.0, 0.0)}
-    backbone: Set[int] = {source}
+    placed: Set[int] = {source}
+    placed_pts: List[Tuple[float, float, float]] = [(0.0, 0.0, 0.0)]  # for distance checks
 
-    # place backbone on z-axis
-    for k, n in enumerate(neg_road, start=1):
-        coords[n] = (0.0, 0.0, -dz * k)
-        backbone.add(n)
-    for k, n in enumerate(pos_road, start=1):
-        coords[n] = (0.0, 0.0, dz * k)
-        backbone.add(n)
+    def is_C(nr: int) -> bool:
+        return str(atoms_by_nr[nr].atype).strip().upper().startswith("C")
 
-    blocked: Set[int] = set(backbone)
+    # -------------------------
+    # SOURCE ROADS
+    # -------------------------
+    roads = straight_roads_from_source(G, source)
+    source_deg = G.degree(source)
 
-    tol = 1e-6
-    occupied: Set[Tuple[int, int, int]] = set()
-    for x, y, z in coords.values():
-        occupied.add((round(x / tol), round(y / tol), round(z / tol)))
+    # Build road meta
+    road_meta: List[Dict[str, object]] = []
+    for road in roads:
+        # carbon-run anywhere + first run start index
+        run = 0
+        max_run = 0
+        carbon_run_start = None  # 1-based
+        for i, n in enumerate(road, start=1):
+            if is_C(n):
+                run += 1
+                if run > max_run:
+                    max_run = run
+                if run == 3 and carbon_run_start is None:
+                    carbon_run_start = i - 2
+            else:
+                run = 0
+        carbon_run_exists = (max_run >= 3)
 
-    max_tries = 20
-    r = 1.0
+        # charge + first charge step
+        first_charge_step = None
+        for step, n in enumerate(road, start=1):
+            if abs(float(atoms_by_nr[n].charge)) > eps:
+                first_charge_step = step
+                break
+        has_charge = (first_charge_step is not None)
 
-    for fork in sorted(backbone):
-        fork_x, fork_y, fork_z = coords[fork]
+        road_meta.append(
+            {
+                "road": road,
+                "carbon_run_exists": carbon_run_exists,
+                "carbon_run_start": carbon_run_start,
+                "has_charge": has_charge,
+                "first_charge_step": first_charge_step,
+            }
+        )
 
-        outs = [nb for nb in G.neighbors(fork) if nb not in blocked]
-        if not outs:
-            continue
-        outs = sorted(outs)
-        k_out = len(outs)
+    # Partition: negatives first, positives second
+    # would-start at source: charge => pos else neg
+    neg_indices = []
+    pos_indices = []
+    for i, m in enumerate(road_meta):
+        would_sgn = 1.0 if m["has_charge"] else -1.0
+        if (m["carbon_run_exists"] and would_sgn > 0.0) or (would_sgn > 0.0 and not m["carbon_run_exists"]):
+            pos_indices.append(i)
+        else:
+            neg_indices.append(i)
 
-        base_angles = (2.0 * np.pi * np.arange(k_out)) / k_out
+    # degree-1 failsafe
+    if source_deg == 1 and road_meta:
+        neg_indices = [0]
+        pos_indices = []
 
-        chosen_rot = 0.0
-        for attempt in range(max_tries):
-            rot = 0.0 if attempt == 0 else float(rng.uniform(0.0, 2.0 * np.pi))
+    # choose one main negative on-axis
+    main_neg_idx = neg_indices[0] if neg_indices else None
 
-            ok = True
-            for idx in range(k_out):
-                if fork == source and idx in (0, 1):
-                    x, y = fork_x, fork_y
-                    sgn = -1.0 if idx == 0 else 1.0
-                else:
-                    theta = float(base_angles[idx] + rot)
-                    x = fork_x + r * float(np.cos(theta))
-                    y = fork_y + r * float(np.sin(theta))
-                    if fork == source:
-                        sgn = -1.0 if (idx % 2 == 0) else 1.0
-                    else:
-                        sgn = -1.0 if fork_z <= 0 else 1.0
+    # helper: propose chain coords then apply global-carbon constraint
+    def apply_global_carbon_constraint(proposed: List[Tuple[int, float, float, float]]) -> List[Tuple[int, float, float, float]]:
+        # if no carbon in proposed, nothing to do
+        max_z_carbon = None
+        for nr, x, y, z in proposed:
+            if is_C(nr):
+                if max_z_carbon is None or z > max_z_carbon:
+                    max_z_carbon = z
+        if max_z_carbon is None:
+            return proposed
+        if max_z_carbon <= 0.0:
+            return proposed
+        # shift down so max carbon ends at z=0
+        shift = max_z_carbon
+        return [(nr, x, y, z - shift) for (nr, x, y, z) in proposed]
 
-                z1 = fork_z + sgn * dz * 1.0
-                key = (round(x / tol), round(y / tol), round(z1 / tol))
-                if key in occupied:
-                    ok = False
+    # helper: collision test for a list of candidate points
+    def collides(candidate: List[Tuple[int, float, float, float]], cutoff: float) -> bool:
+        c2 = cutoff * cutoff
+        for _nr, x, y, z in candidate:
+            for px, py, pz in placed_pts:
+                dx = x - px
+                dy = y - py
+                dz_ = z - pz
+                if (dx * dx + dy * dy + dz_ * dz_) < c2:
+                    return True
+        return False
+
+    # ---- place negative roads (fixed once placed) ----
+    for idx in neg_indices:
+        road = road_meta[idx]["road"]
+        carbon_run_exists = bool(road_meta[idx]["carbon_run_exists"])
+        has_charge = bool(road_meta[idx]["has_charge"])
+        first_charge_step = road_meta[idx]["first_charge_step"]
+
+        # decide sgn/shift
+        # carbon => neg; if charged, shift up so first charge at z=0 (then carbon constraint may shift back down)
+        sgn = -1.0 if carbon_run_exists else -1.0
+        z_shift_steps = int(first_charge_step) if (carbon_run_exists and has_charge and first_charge_step is not None) else 0
+
+        # choose lane
+        if idx == main_neg_idx:
+            bx, by = 0.0, 0.0
+        else:
+            bx, by = 0.0, 0.0
+            found = False
+            for rad in radii:
+                cutoff = cutoff0
+                for _ in range(max_tries):
+                    th = float(rng.uniform(0.0, 2.0 * np.pi))
+                    bx_try = rad * float(np.cos(th))
+                    by_try = rad * float(np.sin(th))
+
+                    proposed = []
+                    for i_step, nr in enumerate(road, start=1):
+                        if nr in placed:
+                            continue
+                        z = (z_shift_steps * dz) + (sgn * dz * float(i_step))
+                        proposed.append((nr, bx_try, by_try, z))
+                    proposed = apply_global_carbon_constraint(proposed)
+
+                    if not collides(proposed, cutoff):
+                        bx, by = bx_try, by_try
+                        found = True
+                        break
+                    cutoff *= cutoff_decay
+                if found:
                     break
 
-            if ok:
-                chosen_rot = rot
+        proposed = []
+        for i_step, nr in enumerate(road, start=1):
+            if nr in placed:
+                continue
+            z = (z_shift_steps * dz) + (sgn * dz * float(i_step))
+            proposed.append((nr, bx, by, z))
+        proposed = apply_global_carbon_constraint(proposed)
+
+        for nr, x, y, z in proposed:
+            coords[nr] = (float(x), float(y), float(z))
+            placed.add(nr)
+            placed_pts.append((float(x), float(y), float(z)))
+
+    # ---- place positive roads (allowed to kink to stay connected to neg) ----
+    for idx in pos_indices:
+        road = road_meta[idx]["road"]
+        carbon_run_exists = bool(road_meta[idx]["carbon_run_exists"])
+        carbon_run_start = road_meta[idx]["carbon_run_start"]
+        has_charge = bool(road_meta[idx]["has_charge"])
+        first_charge_step = road_meta[idx]["first_charge_step"]
+
+        would_sgn = 1.0 if has_charge else -1.0  # source fallback neg
+        break_mode = bool(carbon_run_exists and would_sgn > 0.0 and carbon_run_start is not None)
+
+        # non-break positive: sgn=+1, no shift
+        # (if it had carbon_run_exists and would_sgn>0 we'd be in break_mode)
+        if not break_mode:
+            sgn = 1.0
+            z_shift_steps = 0
+        else:
+            sgn = 1.0
+            z_shift_steps = 0
+
+        # choose side lane for tail (bead 1 stays on-axis for neat connection)
+        bx, by = 0.0, 0.0
+        found = False
+        for rad in radii:
+            cutoff = cutoff0
+            for _ in range(max_tries):
+                th = float(rng.uniform(0.0, 2.0 * np.pi))
+                bx_try = rad * float(np.cos(th))
+                by_try = rad * float(np.sin(th))
+
+                proposed = []
+                if break_mode:
+                    k = int(carbon_run_start)
+                    for i_step, nr in enumerate(road, start=1):
+                        if nr in placed:
+                            continue
+                        if i_step < k:
+                            # pre-anchor on-axis above anchor plane (anchor plane at 0)
+                            z = dz * float(k - i_step)
+                            proposed.append((nr, 0.0, 0.0, z))
+                        else:
+                            # anchor+below on lane, anchor at z=0
+                            z = -dz * float(i_step - k)
+                            proposed.append((nr, bx_try, by_try, z))
+                else:
+                    for i_step, nr in enumerate(road, start=1):
+                        if nr in placed:
+                            continue
+                        z = (z_shift_steps * dz) + (sgn * dz * float(i_step))
+                        if i_step == 1:
+                            proposed.append((nr, 0.0, 0.0, z))
+                        else:
+                            proposed.append((nr, bx_try, by_try, z))
+
+                proposed = apply_global_carbon_constraint(proposed)
+
+                if not collides(proposed, cutoff):
+                    bx, by = bx_try, by_try
+                    found = True
+                    break
+                cutoff *= cutoff_decay
+            if found:
                 break
 
-        for idx, nb in enumerate(outs):
-            if nb in blocked:
+        # commit
+        proposed = []
+        if break_mode:
+            k = int(carbon_run_start)
+            for i_step, nr in enumerate(road, start=1):
+                if nr in placed:
+                    continue
+                if i_step < k:
+                    z = dz * float(k - i_step)
+                    proposed.append((nr, 0.0, 0.0, z))
+                else:
+                    z = -dz * float(i_step - k)
+                    proposed.append((nr, bx, by, z))
+        else:
+            for i_step, nr in enumerate(road, start=1):
+                if nr in placed:
+                    continue
+                z = (z_shift_steps * dz) + (sgn * dz * float(i_step))
+                if i_step == 1:
+                    proposed.append((nr, 0.0, 0.0, z))
+                else:
+                    proposed.append((nr, bx, by, z))
+
+        proposed = apply_global_carbon_constraint(proposed)
+
+        for nr, x, y, z in proposed:
+            coords[nr] = (float(x), float(y), float(z))
+            placed.add(nr)
+            placed_pts.append((float(x), float(y), float(z)))
+
+    # -------------------------
+    # PROPAGATION: forks anywhere
+    # -------------------------
+    queue: List[int] = list(placed)
+
+    while queue:
+        u = queue.pop(0)
+        ux, uy, uz = coords[u]
+        inherited_sgn = -1.0 if uz <= 0.0 else 1.0
+
+        unplaced_neighbors = [v for v in G.neighbors(u) if v not in placed]
+        if not unplaced_neighbors:
+            continue
+        unplaced_neighbors = sorted(unplaced_neighbors)
+
+        # build straight chain for each neighbor
+        chains: Dict[int, List[int]] = {}
+        lengths: Dict[int, int] = {}
+        for v in unplaced_neighbors:
+            prev = u
+            cur = v
+            chain: List[int] = []
+            seen_local = {u}
+            while True:
+                if cur in placed:
+                    break
+                chain.append(cur)
+                seen_local.add(cur)
+                nxts = [x for x in G.neighbors(cur) if x != prev and x not in placed and x not in seen_local]
+                if len(nxts) != 1:
+                    break
+                prev, cur = cur, nxts[0]
+            chains[v] = chain
+            lengths[v] = len(chain)
+
+        main_v = max(unplaced_neighbors, key=lambda vv: lengths.get(vv, 0))
+        radial_vs = [v for v in unplaced_neighbors if v != main_v]
+
+        # place main straight then radials
+        for kind, vs in (("straight", [main_v]), ("radial", radial_vs)):
+            if not vs:
                 continue
 
-            if fork == source and idx in (0, 1):
-                bx, by = fork_x, fork_y
-                branch_sgn = -1.0 if idx == 0 else 1.0
-            else:
-                theta = float(base_angles[idx] + chosen_rot)
-                bx = fork_x + r * float(np.cos(theta))
-                by = fork_y + r * float(np.sin(theta))
-                if fork == source:
-                    branch_sgn = -1.0 if (idx % 2 == 0) else 1.0
-                else:
-                    branch_sgn = -1.0 if fork_z <= 0 else 1.0
+            if kind == "radial":
+                k_out = len(vs)
+                base_angles = (2.0 * np.pi * np.arange(k_out)) / k_out
+                chosen_rot = 0.0
+                for attempt in range(max_tries):
+                    rot = 0.0 if attempt == 0 else float(rng.uniform(0.0, 2.0 * np.pi))
+                    cutoff = cutoff0 * (cutoff_decay ** attempt)
+                    ok = True
+                    for j, v in enumerate(vs):
+                        chain = chains[v]
+                        if not chain:
+                            continue
 
-            chain = walk_straight_chain(G, fork, nb, blocked)
+                        # carbon run + start
+                        run = 0
+                        max_run = 0
+                        carbon_run_start = None
+                        for i_step, nr in enumerate(chain, start=1):
+                            if is_C(nr):
+                                run += 1
+                                if run > max_run:
+                                    max_run = run
+                                if run == 3 and carbon_run_start is None:
+                                    carbon_run_start = i_step - 2
+                            else:
+                                run = 0
+                        carbon_run_exists = (max_run >= 3)
 
-            bx_try, by_try = bx, by
-            for _ in range(max_tries):
-                collided = False
-                for i, node in enumerate(chain):
-                    z = fork_z + branch_sgn * dz * float(i + 1)
-                    key = (round(bx_try / tol), round(by_try / tol), round(z / tol))
-                    if key in occupied:
-                        collided = True
+                        # charge
+                        first_charge_step = None
+                        for step, nr in enumerate(chain, start=1):
+                            if abs(float(atoms_by_nr[nr].charge)) > eps:
+                                first_charge_step = step
+                                break
+                        has_charge = (first_charge_step is not None)
+
+                        would_sgn = 1.0 if has_charge else inherited_sgn
+                        break_mode = bool(carbon_run_exists and would_sgn > 0.0 and carbon_run_start is not None)
+
+                        theta = float(base_angles[j] + rot)
+                        x = ux + float(np.cos(theta))
+                        y = uy + float(np.sin(theta))
+
+                        # probe point
+                        z_probe = uz if break_mode else (uz + (would_sgn * dz))
+                        # distance check
+                        c2 = cutoff * cutoff
+                        for px, py, pz in placed_pts:
+                            dx = x - px
+                            dy = y - py
+                            dz_ = z_probe - pz
+                            if (dx * dx + dy * dy + dz_ * dz_) < c2:
+                                ok = False
+                                break
+                        if not ok:
+                            break
+                    if ok:
+                        chosen_rot = rot
                         break
-                if not collided:
-                    break
 
-                theta = float(rng.uniform(0.0, 2.0 * np.pi))
-                rr = 0.0 if (fork == source and idx in (0, 1)) else r
-                bx_try = fork_x + rr * float(np.cos(theta))
-                by_try = fork_y + rr * float(np.sin(theta))
+            for j, v in enumerate(vs):
+                chain = chains[v]
+                if not chain:
+                    continue
 
-            for i, node in enumerate(chain):
-                z = fork_z + branch_sgn * dz * float(i + 1)
-                x = float(bx_try)
-                y = float(by_try)
-                coords[node] = (x, y, float(z))
-                occupied.add((round(x / tol), round(y / tol), round(z / tol)))
+                # carbon run + start
+                run = 0
+                max_run = 0
+                carbon_run_start = None
+                for i_step, nr in enumerate(chain, start=1):
+                    if is_C(nr):
+                        run += 1
+                        if run > max_run:
+                            max_run = run
+                        if run == 3 and carbon_run_start is None:
+                            carbon_run_start = i_step - 2
+                    else:
+                        run = 0
+                carbon_run_exists = (max_run >= 3)
+
+                # charge + first charge step
+                first_charge_step = None
+                for step, nr in enumerate(chain, start=1):
+                    if abs(float(atoms_by_nr[nr].charge)) > eps:
+                        first_charge_step = step
+                        break
+                has_charge = (first_charge_step is not None)
+
+                would_sgn = 1.0 if has_charge else inherited_sgn
+                break_mode = bool(carbon_run_exists and would_sgn > 0.0 and carbon_run_start is not None)
+
+                # decide non-break sign/shift
+                if not break_mode:
+                    if carbon_run_exists:
+                        sgn = -1.0
+                        z_shift_steps = int(first_charge_step) if (has_charge and first_charge_step is not None) else 0
+                    elif has_charge:
+                        sgn = 1.0
+                        z_shift_steps = 0
+                    else:
+                        sgn = inherited_sgn
+                        z_shift_steps = 0
+                else:
+                    sgn = 1.0
+                    z_shift_steps = 0
+
+                # choose lane coords
+                # straight: prefer keep (ux,uy); for positive / break, allow kink
+                if kind == "radial":
+                    theta0 = float(base_angles[j] + chosen_rot)
+                    base_bx = ux + float(np.cos(theta0))
+                    base_by = uy + float(np.sin(theta0))
+                else:
+                    base_bx, base_by = ux, uy
+
+                allow_kink = True
+                keep_first_on_parent_xy = (kind == "straight")
+
+                bx, by = base_bx, base_by
+
+                # choose a side lane for tails if break or positive (kink)
+                want_side_lane = bool(break_mode or (allow_kink and sgn > 0.0))
+                if want_side_lane:
+                    found = False
+                    for rad in radii:
+                        cutoff = cutoff0
+                        for _ in range(max_tries):
+                            th = float(rng.uniform(0.0, 2.0 * np.pi))
+                            bx_try = ux + rad * float(np.cos(th))
+                            by_try = uy + rad * float(np.sin(th))
+
+                            proposed = []
+                            if break_mode:
+                                k = int(carbon_run_start)
+                                for i_step, nr in enumerate(chain, start=1):
+                                    if nr in placed:
+                                        continue
+                                    if i_step < k:
+                                        z = uz + dz * float(k - i_step)
+                                        proposed.append((nr, ux, uy, z))
+                                    else:
+                                        z = uz - dz * float(i_step - k)
+                                        proposed.append((nr, bx_try, by_try, z))
+                            else:
+                                for i_step, nr in enumerate(chain, start=1):
+                                    if nr in placed:
+                                        continue
+                                    z = uz + (z_shift_steps * dz) + (sgn * dz * float(i_step))
+                                    if keep_first_on_parent_xy and sgn > 0.0 and i_step == 1:
+                                        proposed.append((nr, ux, uy, z))
+                                    else:
+                                        proposed.append((nr, bx_try, by_try, z))
+
+                            proposed = apply_global_carbon_constraint(proposed)
+
+                            if not collides(proposed, cutoff):
+                                bx, by = bx_try, by_try
+                                found = True
+                                break
+                            cutoff *= cutoff_decay
+                        if found:
+                            break
+
+                # commit placement
+                proposed = []
+                if break_mode:
+                    k = int(carbon_run_start)
+                    for i_step, nr in enumerate(chain, start=1):
+                        if nr in placed:
+                            continue
+                        if i_step < k:
+                            z = uz + dz * float(k - i_step)
+                            proposed.append((nr, ux, uy, z))
+                        else:
+                            z = uz - dz * float(i_step - k)
+                            proposed.append((nr, bx, by, z))
+                else:
+                    for i_step, nr in enumerate(chain, start=1):
+                        if nr in placed:
+                            continue
+                        z = uz + (z_shift_steps * dz) + (sgn * dz * float(i_step))
+                        if keep_first_on_parent_xy and sgn > 0.0 and allow_kink and i_step == 1:
+                            proposed.append((nr, ux, uy, z))
+                        else:
+                            proposed.append((nr, bx, by, z))
+
+                proposed = apply_global_carbon_constraint(proposed)
+
+                for nr, x, y, z in proposed:
+                    coords[nr] = (float(x), float(y), float(z))
+                    placed.add(nr)
+                    placed_pts.append((float(x), float(y), float(z)))
+                    queue.append(nr)
+
+    # hard enforce base at origin (and never moved)
+    coords[source] = (0.0, 0.0, 0.0)
+
+    # final failsafe
+    for a in mol.atoms:
+        if a.nr not in coords:
+            coords[a.nr] = (0.0, 0.0, 0.0)
 
     return [coords[a.nr] for a in mol.atoms]
 
@@ -397,10 +812,11 @@ def universe_from_mol_and_coords(mol, coords, *, resname: str = "MOL", resid: in
 
     return u
 
-def maker_itp(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base: str="PO4",output: str="lib.txt") -> None:
+def maker_itp(file: str, flipper: bool=False, sz: float=1, sxy: float=1, base: str="PO4",output: str="lib.txt") -> None:
     from ..core.itp_parser import read_itp_molecules as itp
 
     mols=itp(file)
+    all_failed=True
     for mol in mols:
         G=mol_to_graph(mol)
         try:
@@ -408,8 +824,18 @@ def maker_itp(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base:
         except StopIteration:
             print(f"base was not in {mol.name} and thus {mol.name} was skipped")
             continue
+        all_failed=False
         G.nodes[source]["source"] = True
+
+        import matplotlib.pyplot as plt
+        nx.draw(G, with_labels=True)
+        plt.savefig(fname=mol.name+"_"+"plot.png")
+
         coords = layout_xyz(G,mol, source, dz=1.0)
+
+        scale = np.array([sxy, sxy, -sz if fflipper else sz], dtype=float)
+        coords=coords*scale
+
         u=universe_from_mol_and_coords(mol,coords)
         write_file(u,mol.name+"_"+output,mol.name)
         
@@ -418,7 +844,13 @@ def maker_itp(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base:
         with mda.coordinates.GRO.GROWriter(mol.name+"_"+"layout.gro") as W:
             W.write(u.atoms)
         print(f"Wrote lib file entry into {output}")
-
+    if all_failed:
+        print("The base bead was not present in any of the molecules, no file was written.")
+    else:
+        print("""File(s) created!
+    Please note that the libmaker is a crude helper and the correctness of the generated lipid cannot be guaranteed. A visualization aid has been written as a .gro. Check before you run it.
+    To use the new lipid, copy the contents of the generated file into the LIB file.
+            """)
 
 def library_file_preparer(args: List[str]) -> None:
     """Experimental tool to generate LIB entry from gro or pdb"""
@@ -426,8 +858,8 @@ def library_file_preparer(args: List[str]) -> None:
                                    formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-p','--path',default="structure.gro",help="Single lipid structure file.")
     parser.add_argument('-f','--flip',default=False,action='store_true',help="Flip the results along the xy plane, so +z -> -z")
-    parser.add_argument('-sz','--scalingz',default=.5,type=float,help="Move beads closer together in z direction, easier placement, more minimization")
-    parser.add_argument('-sxy','--scalingxy',default=.5,type=float,help="Move beads closer together in x-y direction, easier placement, more minimization")
+    parser.add_argument('-sz','--scalingz',default=1,type=float,help="(0 to 1), default 1,Move beads closer together in z direction, easier placement, more minimization")
+    parser.add_argument('-sxy','--scalingxy',default=1,type=float,help="(0 to 1), default 1, Move beads closer together in x-y direction, easier placement, more minimization")
     parser.add_argument('-b','--base',default="PO4",type=str,help="Name of the bead that serves as a reference with coordinates 0.0 0.0 0.0")
     parser.add_argument('-o','--output',default="lib.txt",type=str,help="Output text file to be copied into the LIB file.")
     
@@ -444,10 +876,7 @@ def library_file_preparer(args: List[str]) -> None:
             """)
         elif file.suffix == ".itp":
             maker_itp(file=file, flipper=args.flip, sz=args.scalingz, sxy=args.scalingxy, base=args.base,output=args.output)
-            print("""File created!
-    Please note that the libmaker is a crude helper and the correctness of the generated lipid cannot be guaranteed.
-    To use the new lipid, copy the contents of the generated file into the LIB file.
-            """)
+            
         else:
             raise ValueError(f"Unsupported file type: {file.suffix}. Only .gro and .itp are supported.")
 
