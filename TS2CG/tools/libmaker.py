@@ -118,16 +118,26 @@ def maker_gro(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base:
     write_file(u,output,resname)
     print(f"Wrote lib file entry into {output}")
 
-def mol_to_graph(mol) -> nx.Graph:
+def mol_to_graph(mol):
     G = nx.Graph()
 
-    # nodes: use atom index (nr) as node id, store atom name as attribute
-    for a in mol.atoms:
-        G.add_node(a.nr, name=a.atom)
+    # add non-hydrogen atoms as nodes
+    heavy_atoms = {a.nr for a in mol.atoms if not a.atom.upper().startswith("H")}
 
-    # edges: bonds
+    for a in mol.atoms:
+        if a.nr not in heavy_atoms:
+            continue
+        G.add_node(
+            a.nr,
+            name=a.atom,
+            atype=a.atype,
+            charge=a.charge,
+        )
+
+    # add bonds only if BOTH endpoints are non-hydrogen
     for b in mol.bonds:
-        G.add_edge(b.ai, b.aj)
+        if b.ai in heavy_atoms and b.aj in heavy_atoms:
+            G.add_edge(b.ai, b.aj)
 
     return G
 
@@ -779,7 +789,7 @@ def layout_xyz(G, mol, source: int, dz: float = 1.0, seed: int | None = None) ->
         if a.nr not in coords:
             coords[a.nr] = (0.0, 0.0, 0.0)
 
-    return [coords[a.nr] for a in mol.atoms]
+    return np.asarray([coords[a.nr] for a in mol.atoms])
 
 def universe_from_mol_and_coords(mol, coords, *, resname: str = "MOL", resid: int = 1):
     """
@@ -833,7 +843,7 @@ def maker_itp(file: str, flipper: bool=False, sz: float=1, sxy: float=1, base: s
 
         coords = layout_xyz(G,mol, source, dz=1.0)
 
-        scale = np.array([sxy, sxy, -sz if fflipper else sz], dtype=float)
+        scale = np.array([sxy, sxy, -sz if flipper else sz], dtype=float)
         coords=coords*scale
 
         u=universe_from_mol_and_coords(mol,coords)
