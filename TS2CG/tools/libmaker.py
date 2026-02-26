@@ -268,7 +268,6 @@ def walk_straight_chain(G: nx.Graph, fork: int, first: int, blocked: Set[int]) -
 
 def apply_virtual_sites3(coords: np.ndarray, vs3: list[VirtualSite3Row]) -> np.ndarray:
     # coords indexed by atomnr-1
-    print("vs3",vs3)
     out = coords.copy()
     for v in vs3:
         out[v.vid - 1] = (out[v.a1 - 1] + out[v.a2 - 1] + out[v.a3 - 1]) / 3.0
@@ -846,7 +845,6 @@ def maker_itp(file: str, flipper: bool=False, sz: float=1, sxy: float=1, base: s
         G.nodes[source]["source"] = True
 
         coords = layout_xyz(G,mol, source, dz=1.0)
-
         coords=apply_virtual_sites3(coords,mol.virtual_sites)
 
         scale = np.array([sxy, sxy, -sz if flipper else sz], dtype=float)
