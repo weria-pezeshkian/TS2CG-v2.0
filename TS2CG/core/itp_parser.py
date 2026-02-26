@@ -43,6 +43,23 @@ class DihedralRow:
     funct: int
     params: Tuple[str, ...] = ()
 
+@dataclass(frozen=True)
+class VirtualSitsRow:
+    vid: int         # virtual site atom id
+    funct: int
+    a1: int
+    a2: int
+    a3: int
+
+@dataclass(frozen=True)
+class ConstraintRow:
+    ai: int
+    aj: int
+    funct: int
+
+
+
+
 # ----------------------------
 # Parsers per section
 # ----------------------------
@@ -104,12 +121,30 @@ def parse_dihedrals(tokens: List[str]) -> DihedralRow:
         params=tuple(tokens[5:]),
     )
 
+def parse_virtual_sites(tokens: List[str]) -> VirtualSiteRow:
+    if len(tokens) < 5:
+        raise ValueError(f"[ virtual_sites ] expects >=5 columns, got: {tokens}")
+    return VirtualSiteRow(
+        vid=int(tokens[0]),
+        funct=int_or_str(tokens[1]),
+        a1=int(tokens[2]),
+        a2=int(tokens[3]),
+        a3=int(tokens[4]),
+    )
+
+def parse_constraints(tokens: List[str]) -> ConstraintRow:
+    if len(tokens) < 3:
+        raise ValueError(f"[ constraints ] expects >=3 columns, got: {tokens}")
+    return ConstraintRow(ai=int(tokens[0]), aj=int(tokens[1]), funct=int_or_str(tokens[2]))
+
 
 SECTION_PARSERS: Dict[str, Callable[[List[str]], Any]] = {
     "atoms": parse_atoms,
     "bonds": parse_bonds,
     "angles": parse_angles,
     "dihedrals": parse_dihedrals,
+    "virtual_sites": parse_virtual_sites,
+    "constraints":parse_constraints,
 }
 
 
@@ -145,6 +180,14 @@ class MoleculeType:
     @property
     def dihedrals(self) -> List[DihedralRow]:
         return self.sections.get("dihedrals", [])  # type: ignore[return-value]
+
+    @property
+    def virtual_sites(self) -> list[VirtualSiteRow]:
+        return self.sections.get("virtual_sites", [])  # type: ignore[return-value]
+
+    @property
+    def constraints(self) -> list[ConstraintRow]:
+        return self.sections.get("constraints", [])  # type: ignore[return-value]
 
 
 # ----------------------------

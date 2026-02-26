@@ -118,26 +118,28 @@ def maker_gro(file: str, flipper: bool=False, sz: float=.5, sxy: float=.5, base:
     write_file(u,output,resname)
     print(f"Wrote lib file entry into {output}")
 
-def mol_to_graph(mol):
+def mol_to_graph(mol, constraints: bool = False):
     G = nx.Graph()
 
-    # add non-hydrogen atoms as nodes
-    heavy_atoms = {a.nr for a in mol.atoms if not a.atom.upper().startswith("H")}
+    # keep only non-hydrogen atoms as graph nodes
+    heavy = {a.nr for a in mol.atoms if not a.atom.upper().startswith("H")}
 
+    # nodes
     for a in mol.atoms:
-        if a.nr not in heavy_atoms:
+        if a.nr not in heavy:
             continue
-        G.add_node(
-            a.nr,
-            name=a.atom,
-            atype=a.atype,
-            charge=a.charge,
-        )
+        G.add_node(a.nr, name=a.atom, atype=a.atype, charge=a.charge)
 
-    # add bonds only if BOTH endpoints are non-hydrogen
-    for b in mol.bonds:
-        if b.ai in heavy_atoms and b.aj in heavy_atoms:
+    # bonds as edges
+    for b in getattr(mol, "bonds", []):
+        if b.ai in heavy and b.aj in heavy:
             G.add_edge(b.ai, b.aj)
+
+    # optionally treat constraints as edges too
+    if constraints:
+        for c in getattr(mol, "constraints", []):
+            if c.ai in heavy and c.aj in heavy:
+                G.add_edge(c.ai, c.aj)
 
     return G
 
@@ -264,8 +266,14 @@ def walk_straight_chain(G: nx.Graph, fork: int, first: int, blocked: Set[int]) -
 
     return chain
 
+def apply_virtual_sites3(coords: np.ndarray, vs3: list[VirtualSite3Row]) -> np.ndarray:
+    # coords indexed by atomnr-1
+    print("vs3",vs3)
+    out = coords.copy()
+    for v in vs3:
+        out[v.vid - 1] = (out[v.a1 - 1] + out[v.a2 - 1] + out[v.a3 - 1]) / 3.0
+    return out
 
-# -------- only function you call --------
 def layout_xyz(G, mol, source: int, dz: float = 1.0, seed: int | None = None) -> List[Tuple[float, float, float]]:
     """
     Heuristic layout with global carbon constraint:
@@ -822,13 +830,13 @@ def universe_from_mol_and_coords(mol, coords, *, resname: str = "MOL", resid: in
 
     return u
 
-def maker_itp(file: str, flipper: bool=False, sz: float=1, sxy: float=1, base: str="PO4",output: str="lib.txt") -> None:
+def maker_itp(file: str, flipper: bool=False, sz: float=1, sxy: float=1, base: str="PO4",output: str="lib.txt", constraints: bool=False) -> None:
     from ..core.itp_parser import read_itp_molecules as itp
 
     mols=itp(file)
     all_failed=True
     for mol in mols:
-        G=mol_to_graph(mol)
+        G=mol_to_graph(mol,constraints)
         try:
             source = next(n for n, d in G.nodes(data=True) if d["name"] == base)
         except StopIteration:
@@ -837,11 +845,9 @@ def maker_itp(file: str, flipper: bool=False, sz: float=1, sxy: float=1, base: s
         all_failed=False
         G.nodes[source]["source"] = True
 
-        import matplotlib.pyplot as plt
-        nx.draw(G, with_labels=True)
-        plt.savefig(fname=mol.name+"_"+"plot.png")
-
         coords = layout_xyz(G,mol, source, dz=1.0)
+
+        coords=apply_virtual_sites3(coords,mol.virtual_sites)
 
         scale = np.array([sxy, sxy, -sz if flipper else sz], dtype=float)
         coords=coords*scale
@@ -872,6 +878,7 @@ def library_file_preparer(args: List[str]) -> None:
     parser.add_argument('-sxy','--scalingxy',default=1,type=float,help="(0 to 1), default 1, Move beads closer together in x-y direction, easier placement, more minimization")
     parser.add_argument('-b','--base',default="PO4",type=str,help="Name of the bead that serves as a reference with coordinates 0.0 0.0 0.0")
     parser.add_argument('-o','--output',default="lib.txt",type=str,help="Output text file to be copied into the LIB file.")
+    parser.add_argument('--consider_constraints',default=False,action='store_true',help="Uses constraints in the itp as bonds")
     
     args = parser.parse_args(args)
     logging.basicConfig(level=logging.INFO)
@@ -885,7 +892,7 @@ def library_file_preparer(args: List[str]) -> None:
     To use the new lipid, copy the contents of the generated file into the LIB file.
             """)
         elif file.suffix == ".itp":
-            maker_itp(file=file, flipper=args.flip, sz=args.scalingz, sxy=args.scalingxy, base=args.base,output=args.output)
+            maker_itp(file=file, flipper=args.flip, sz=args.scalingz, sxy=args.scalingxy, base=args.base,output=args.output, constraints=args.consider_constraints)
             
         else:
             raise ValueError(f"Unsupported file type: {file.suffix}. Only .gro and .itp are supported.")
