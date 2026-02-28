@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Dict
+from typing import List, Optional, Sequence, Dict, Tuple, Set
 import MDAnalysis as mda
 import networkx as nx
 import random
@@ -143,27 +143,6 @@ def mol_to_graph(mol, constraints: bool = False):
 
     return G
 
-def straight_roads_from_source(G: nx.Graph, source: int):
-    """
-    Returns a list of roads. Each road is a list of node ids starting AFTER source:
-    [v1, v2, v3, ...] where v1 is a neighbor of source.
-    """
-    roads = []
-    for nb in G.neighbors(source):
-        road = []
-        prev = source
-        cur = nb
-        while True:
-            road.append(cur)
-            # forward candidates excluding where we came from
-            nxts = [x for x in G.neighbors(cur) if x != prev]
-            if len(nxts) != 1:
-                # stop if dead end (0) or branch/cycle junction (>1)
-                break
-            prev, cur = cur, nxts[0]
-        roads.append(road)
-    return roads
-
 def straight_roads_from_source(G: nx.Graph, source: int) -> List[List[int]]:
     """
     For each neighbor of source, walk forward while the current node has exactly one
@@ -181,7 +160,6 @@ def straight_roads_from_source(G: nx.Graph, source: int) -> List[List[int]]:
             prev, cur = cur, nxts[0]
         roads.append(road)
     return roads
-
 
 def decide_road(mol, road: List[int], *, seed: int | None = None) -> Tuple[str, int, bool]:
     """
@@ -240,7 +218,6 @@ def decide_road(mol, road: List[int], *, seed: int | None = None) -> Tuple[str, 
         direction = rng.choice(["neg", "pos"])
 
     return direction, z_shift_steps, radial
-
 
 def walk_straight_chain(G: nx.Graph, fork: int, first: int, blocked: Set[int]) -> List[int]:
     """
