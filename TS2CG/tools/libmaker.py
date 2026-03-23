@@ -7,13 +7,19 @@ from pathlib import Path
 import numpy as np
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Dict, Tuple, Set
+from typing import List, Optional, Sequence, Dict, Tuple, Set, Protocol
 import MDAnalysis as mda
 import networkx as nx
 import random
 
 logger = logging.getLogger(__name__)
 
+class ProtocolVirtualSite3(Protocol):
+    vid: int         
+    funct: int
+    a1: int
+    a2: int
+    a3: int
 
 def write_file(universe: mda.Universe, filename: str = 'lib.txt',name:str="lipid") -> str:
     """
@@ -243,7 +249,7 @@ def walk_straight_chain(G: nx.Graph, fork: int, first: int, blocked: Set[int]) -
 
     return chain
 
-def apply_virtual_sites3(coords: np.ndarray, vs3: list[VirtualSite3Row]) -> np.ndarray:
+def apply_virtual_sites3(coords: np.ndarray, vs3: list[ProtocolVirtualSite3]) -> np.ndarray:
     # coords indexed by atomnr-1
     out = coords.copy()
     for v in vs3:
