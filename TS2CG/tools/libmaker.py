@@ -853,7 +853,7 @@ def library_file_preparer(args: List[str]) -> None:
     """Experimental tool to generate LIB entry from gro or pdb"""
     parser = argparse.ArgumentParser(description=__doc__,
                                    formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('-p','--path',default="structure.gro",help="Single lipid structure file.")
+    parser.add_argument('-p','--path',default="structure.gro",help="Single lipid structure file (gro,pdb) or itp file.")
     parser.add_argument('-f','--flip',default=False,action='store_true',help="Flip the results along the xy plane, so +z -> -z")
     parser.add_argument('-sz','--scalingz',default=1,type=float,help="(0 to 1), default 1,Move beads closer together in z direction, easier placement, more minimization")
     parser.add_argument('-sxy','--scalingxy',default=1,type=float,help="(0 to 1), default 1, Move beads closer together in x-y direction, easier placement, more minimization")
