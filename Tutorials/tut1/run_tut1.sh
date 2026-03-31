@@ -17,7 +17,7 @@ function show_help {
 # Parse command-line arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -h) 
+        -h)
             show_help
             exit 0
             ;;
