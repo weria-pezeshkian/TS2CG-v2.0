@@ -64,6 +64,12 @@ class ConstraintRow:
 # Parsers per section
 # ----------------------------
 
+def int_or_str(x: str):
+    try:
+        return int(x)
+    except ValueError:
+        return x
+
 def parse_atoms(tokens: List[str]) -> AtomRow:
     # nr type resnr residue atom cgnr charge [mass]
     if len(tokens) < 7:
@@ -79,12 +85,6 @@ def parse_atoms(tokens: List[str]) -> AtomRow:
         charge=float(tokens[6]),
         mass=mass,
     )
-
-def int_or_str(x: str):
-    try:
-        return int(x)
-    except ValueError:
-        return x
 
 def parse_bonds(tokens: List[str]) -> BondRow:
     if len(tokens) < 3:
