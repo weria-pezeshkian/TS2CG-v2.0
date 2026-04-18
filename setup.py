@@ -50,7 +50,7 @@ setup(
                   'core/*', 'tools/*', 'cpp/*'],
     },
     include_package_data=True,
-    python_requires='>=3.6',
+    python_requires='>=3.10',
     install_requires=[],
     entry_points={
         'console_scripts': [
